@@ -9,6 +9,7 @@ import { Heart, MessageSquare, Send } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "./ui/input";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 type Comment = {
   id: number;
@@ -51,10 +52,12 @@ export default function CommunityPost({ post, onLike, onComment, currentArtist }
   return (
     <Card className="w-full shadow-lg border-primary/20">
       <CardHeader className="flex flex-row items-center gap-4">
-        <Avatar>
-          <AvatarImage src={post.avatarUrl} data-ai-hint="artist portrait" />
-          <AvatarFallback>{post.author.substring(0, 2).toUpperCase()}</AvatarFallback>
-        </Avatar>
+        <Link href="/community/chat">
+            <Avatar>
+            <AvatarImage src={post.avatarUrl} data-ai-hint="artist portrait" />
+            <AvatarFallback>{post.author.substring(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+        </Link>
         <div className="flex-1">
           <p className="font-bold text-primary">{post.author}</p>
           <p className="text-xs text-muted-foreground">{post.timestamp}</p>
