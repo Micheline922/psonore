@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, MessageCircle, PlusCircle } from "lucide-react";
+import { ArrowLeft, MessageCircle, MessageSquarePlus, PlusCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/logo";
@@ -139,37 +139,45 @@ export default function CommunityPage() {
                 </Link>
             </Button>
             <h1 className="text-2xl font-headline text-primary tracking-wider text-center">Communauté</h1>
-             <Dialog open={isPostDialogOpen} onOpenChange={setIsPostDialogOpen}>
-                <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <PlusCircle />
-                        <span className="sr-only">Publier</span>
-                    </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                    <DialogTitle className="font-headline text-2xl">Nouvelle Publication</DialogTitle>
-                    <DialogDescription>
-                        Partagez votre dernière création avec la communauté.
-                    </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid w-full gap-1.5">
-                            <Label htmlFor="message">Votre texte</Label>
-                            <Textarea 
-                                placeholder="Écrivez votre texte ici..." 
-                                id="message"
-                                value={newPostContent}
-                                onChange={e => setNewPostContent(e.target.value)}
-                                className="min-h-32"
-                             />
+             <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" asChild>
+                    <Link href="/community/chat">
+                        <MessageSquarePlus />
+                        <span className="sr-only">Chat</span>
+                    </Link>
+                </Button>
+                <Dialog open={isPostDialogOpen} onOpenChange={setIsPostDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <PlusCircle />
+                            <span className="sr-only">Publier</span>
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                        <DialogTitle className="font-headline text-2xl">Nouvelle Publication</DialogTitle>
+                        <DialogDescription>
+                            Partagez votre dernière création avec la communauté.
+                        </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid w-full gap-1.5">
+                                <Label htmlFor="message">Votre texte</Label>
+                                <Textarea 
+                                    placeholder="Écrivez votre texte ici..." 
+                                    id="message"
+                                    value={newPostContent}
+                                    onChange={e => setNewPostContent(e.target.value)}
+                                    className="min-h-32"
+                                 />
+                            </div>
                         </div>
-                    </div>
-                    <DialogFooter>
-                    <Button onClick={handlePublishPost} className="bg-accent hover:bg-accent/90">Publier</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                        <DialogFooter>
+                        <Button onClick={handlePublishPost} className="bg-accent hover:bg-accent/90">Publier</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+             </div>
         </div>
       </header>
 
@@ -203,4 +211,3 @@ export default function CommunityPage() {
     </div>
   );
 }
-
