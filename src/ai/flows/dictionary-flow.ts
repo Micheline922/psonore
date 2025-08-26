@@ -11,12 +11,12 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const DictionaryInputSchema = z.object({
+const DictionaryInputSchema = z.object({
   word: z.string().describe('The French word to look up.'),
 });
 export type DictionaryInput = z.infer<typeof DictionaryInputSchema>;
 
-export const DictionaryOutputSchema = z.object({
+const DictionaryOutputSchema = z.object({
   definition: z.string().describe('The definition of the word.'),
   synonyms: z.array(z.string()).describe('A list of synonyms for the word.'),
   antonyms: z.array(z.string()).describe('A list of antonyms for the word.'),
