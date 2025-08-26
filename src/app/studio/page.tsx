@@ -26,6 +26,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -314,7 +315,7 @@ export default function StudioPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-            <Card className="shadow-lg border-primary/20">
+            <Card className="shadow-lg border-primary/20 flex flex-col">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-headline text-2xl">
                   <BookText className="text-accent" />
@@ -322,7 +323,7 @@ export default function StudioPage() {
                 </CardTitle>
                 <CardDescription>{editingId ? "Modifiez votre oeuvre." : "Écrivez librement vos inspirations, poésies, et punchlines."}</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex-grow">
                 <div className="relative">
                   <Textarea
                     placeholder="Commencez à écrire ici..."
@@ -358,6 +359,14 @@ export default function StudioPage() {
                   </Card>
                 )}
               </CardContent>
+               <CardFooter className="justify-center">
+                <Button asChild variant="link">
+                    <Link href="/creations">
+                        <FolderKanban className="mr-2"/>
+                        Voir toutes mes créations
+                    </Link>
+                </Button>
+            </CardFooter>
             </Card>
           </div>
 
@@ -418,18 +427,6 @@ export default function StudioPage() {
             </Card>
 
             <Card className="hover:border-primary/60 transition-colors">
-                <Link href="/creations" className="block h-full">
-                    <CardHeader>
-                        <CardTitle className="font-headline text-2xl flex items-center gap-2">
-                            <FolderKanban className="text-accent" />
-                            Mes Créations
-                        </CardTitle>
-                        <CardDescription>Retrouvez toutes vos œuvres sauvegardées.</CardDescription>
-                    </CardHeader>
-                </Link>
-            </Card>
-
-            <Card className="hover:border-primary/60 transition-colors">
                 <Link href="/academy" className="block h-full">
                     <CardHeader>
                         <CardTitle className="font-headline text-2xl flex items-center gap-2">
@@ -475,5 +472,3 @@ export default function StudioPage() {
     </div>
   );
 }
-
-    
