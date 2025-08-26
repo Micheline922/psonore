@@ -19,6 +19,7 @@ import {
   Zap,
   GraduationCap,
   FolderKanban,
+  HelpCircle,
 } from "lucide-react";
 import { generateCreativeText, GenerateCreativeTextOutput } from "@/ai/flows/creative-ai-assistant";
 import { Button } from "@/components/ui/button";
@@ -53,7 +54,8 @@ type Ambiance = "Instrumental" | "Nature" | "Urbain" | null;
 
 export default function StudioPage() {
   const [text, setText] = useState("");
-  const [generatedContent, setGeneratedContent] = useState<GenerateCreativeTextOutput | null>(null);
+  const [generatedContent, setGeneratedContent] = useState<string | null>(null);
+  const [generatedGuidance, setGeneratedGuidance] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   const [isListening, setIsListening] = useState(false);
@@ -136,9 +138,16 @@ export default function StudioPage() {
   const handleGenerate = async (values: { textFragment: string; style: string }) => {
     setIsGenerating(true);
     setGeneratedContent(null);
+    setGeneratedGuidance(null);
     try {
       const result = await generateCreativeText(values);
-      setGeneratedContent(result);
+      const [content, guidance] = result.generatedText.split("---CONSEILS---");
+      
+      setGeneratedContent(content.trim());
+      if(guidance) {
+        setGeneratedGuidance(guidance.trim());
+      }
+      
     } catch (error) {
       console.error("Error generating text:", error);
       toast({
@@ -354,7 +363,19 @@ export default function StudioPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="whitespace-pre-wrap font-body text-foreground/90">{generatedContent.generatedText}</p>
+                      <p className="whitespace-pre-wrap font-body text-foreground/90">{generatedContent}</p>
+                    </CardContent>
+                  </Card>
+                )}
+                {generatedGuidance && (
+                   <Card className="mt-4 bg-accent/5 border-accent/20">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 font-headline text-xl text-accent">
+                        <HelpCircle size={20} className="text-accent"/> Conseils du Maestro
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="whitespace-pre-wrap font-body text-foreground/90">{generatedGuidance}</p>
                     </CardContent>
                   </Card>
                 )}

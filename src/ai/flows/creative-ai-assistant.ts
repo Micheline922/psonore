@@ -44,12 +44,15 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateCreativeTextOutputSchema},
   prompt: `You are a creative AI assistant designed to help poets, slammers, rappers, and writers overcome writer's block and enhance their creative process.
 
-You will receive a fragment of text and a desired style. Your task is to generate new verses, metaphors, or complete the text in the specified style.
+You will receive a fragment of text and a desired style. Your task is to generate a well-rhymed text based on the user's input. The text must follow these rules:
+1. It must be structured in stanzas of four verses each (quatrains).
+2. It must not exceed five stanzas.
+3. After the generated text, you must provide guidance and suggestions to help the artist continue and complete the work themselves. Start this section with "---CONSEILS---".
 
 Text Fragment: {{{textFragment}}}
 Desired Style: {{{style}}}
 
-Generated Text:`, // Ensure the output is structured and coherent.
+Generated Text and Guidance:`,
 });
 
 const generateCreativeTextFlow = ai.defineFlow(
@@ -63,4 +66,3 @@ const generateCreativeTextFlow = ai.defineFlow(
     return output!;
   }
 );
-
