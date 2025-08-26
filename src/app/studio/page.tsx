@@ -29,7 +29,7 @@ import {
     evaluatePunchline,
     type EvaluatePunchlineInput,
 } from "@/ai/flows/punchline-quiz-flow";
-import { evaluatePerformance, type EvaluatePerformanceOutput } from "@/ai/flows/evaluate-performance-flow";
+import { evaluatePerformance, type EvaluatePerformanceInput, type EvaluatePerformanceOutput } from "@/ai/flows/evaluate-performance-flow";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -92,7 +92,34 @@ const tongueTwisters = [
     { name: "Poétique", text: "Un chasseur sachant chasser doit savoir chasser sans son chien." },
     { name: "Rapide", text: "Piano, panier, panier, piano." },
     { name: "Complexe", text: "Je veux et j'exige d'exquises excuses." },
+    { name: "Sibilant", text: "Si six scies scient six cyprès, six cents scies scient six cents cyprès." },
+    { name: "Animaux", text: "Trois tortues trottaient sur un trottoir très étroit." },
+    { name: "Gourmand", text: "Ciel, si c'est cinq sous ces six ou sept sots-l'y-laisse, c'est cher !" },
+    { name: "Logique", text: "Ton thé t'a-t-il ôté ta toux ?" },
+    { name: "Répétitif", text: "Natacha n'attacha pas son chat Pacha qui s'échappa." },
+    { name: "Absurde", text: "Le fisc fixe exprès chaque taxe excessive exclusivement au luxe et à l'exquis." },
+    { name: "Fruité", text: "Tonton, ton thé t'a-t-il ôté ta toux, tout en toussant ?" },
+    { name: "Marin", text: "Cinq chiens chassent six chats." },
+    { name: "Couture", text: "Trois gros rats gris dans trois gros trous ronds rongent trois gros croûtons ronds." },
+    { name: "Militaire", text: "Le dragon gradé dégrade le gradé dragon." },
+    { name: "Judiciaire", text: "Je suis ce que je suis, et si je suis ce que je suis, qu'est-ce que je suis ?" },
+    { name: "Culinaire", text: "L'énorme orme morne sur la morne berge borne la morne plaine." },
+    { name: "Élégant", text: "Un pâtissier qui pâtissait chez un tapissier qui tapissait, demanda un jour au tapissier..." },
+    { name: "Enfance", text: "Didon dîna, dit-on, du dos d'un dodu dindon." },
+    { name: "Sonore", text: "Kiki était cocotte, et Koko concasseur de cacao. Kiki la cocotte aimait Koko le concasseur de cacao." },
+    { name: "Voyage", text: "Le ver vert va vers le verre vert." },
+    { name: "Pratique", text: "As-tu vu le tutu de tulle de Lili d'Honolulu ?" },
+    { name: "Mystère", text: "Ces cyprès sont si loin qu'on ne sait si c'en sont." },
+    { name: "Zozotant", text: "Le justicier juste juste justifiait ce jeune." },
+    { name: "Agricole", text: "Fruits frais, fruits frits, fruits cuits, fruits crus." },
+    { name: "Mignon", text: "Un plein plat de blé pilé." },
+    { name: "Exotique", text: "Tata, ta tarte tatin tenta Tonton." },
+    { name: "Professionnel", text: "Lise et Lucette lisent et Lucette et Lise aussi." },
+    { name: "Virelangue", text: "La pie niche haut, l'oie niche bas, où niche l'hibou ? L'hibou niche ni haut ni bas !" },
+    { name: "Rapide", text: "Seize jacinthes sèchent dans seize sachets secs." },
+    { name: "Nature", text: "Le poivre fait fièvre à la pauvre pieuvre." }
 ];
+
 
 export default function StudioPage() {
   const [title, setTitle] = useState("");
