@@ -21,6 +21,7 @@ import {
   ChevronRight,
   RefreshCw,
   Star,
+  Flame,
 } from "lucide-react";
 import { generateCreativeText } from "@/ai/flows/creative-ai-assistant";
 import {
@@ -28,7 +29,7 @@ import {
     evaluatePunchline,
     type EvaluatePunchlineInput,
 } from "@/ai/flows/punchline-quiz-flow";
-import { evaluatePerformance, type EvaluatePerformanceInput, type EvaluatePerformanceOutput } from "@/ai/flows/evaluate-performance-flow";
+import { evaluatePerformance, type EvaluatePerformanceOutput } from "@/ai/flows/evaluate-performance-flow";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -60,6 +61,15 @@ import {
 import type { Creation } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import { Bar, BarChart, ResponsiveContainer } from "recharts"
+import { ChartContainer } from "@/components/ui/chart";
 
 type QuizResult = {
     score: number;
@@ -75,6 +85,13 @@ const proverbs = [
   "Le silence est parfois le plus beau des poèmes.",
   "Mieux vaut prendre le changement par la main avant qu'il ne nous prenne par la gorge.",
   "On ne voit bien qu'avec le cœur. L'essentiel est invisible pour les yeux."
+];
+
+const tongueTwisters = [
+    { name: "Classique", text: "Les chaussettes de l'archiduchesse sont-elles sèches, archi-sèches ?" },
+    { name: "Poétique", text: "Un chasseur sachant chasser doit savoir chasser sans son chien." },
+    { name: "Rapide", text: "Piano, panier, panier, piano." },
+    { name: "Complexe", text: "Je veux et j'exige d'exquises excuses." },
 ];
 
 export default function StudioPage() {
@@ -104,10 +121,19 @@ export default function StudioPage() {
   const [isEvaluatingPerformance, setIsEvaluatingPerformance] = useState(false);
   const [performanceResult, setPerformanceResult] = useState<EvaluatePerformanceOutput | null>(null);
   const recognitionRef = useRef<any>(null);
+  const [performanceHistory, setPerformanceHistory] = useState<{ score: number }[]>([]);
 
   useEffect(() => {
     setProverb(proverbs[Math.floor(Math.random() * proverbs.length)]);
   }, []);
+  
+  useEffect(() => {
+    if (artistName) {
+      const historyKey = `plumeSonorePerformanceHistory_${artistName}`;
+      const savedHistory = JSON.parse(localStorage.getItem(historyKey) || '[]');
+      setPerformanceHistory(savedHistory);
+    }
+  }, [artistName]);
 
   useEffect(() => {
     const savedArtist = localStorage.getItem("plumeSonoreArtist");
@@ -306,6 +332,14 @@ export default function StudioPage() {
           };
           const result = await evaluatePerformance(input);
           setPerformanceResult(result);
+          
+          if(artistName){
+              const historyKey = `plumeSonorePerformanceHistory_${artistName}`;
+              const newHistory = [...performanceHistory, { score: result.score }].slice(-3); // Keep last 3
+              setPerformanceHistory(newHistory);
+              localStorage.setItem(historyKey, JSON.stringify(newHistory));
+          }
+
           toast({ title: "Évaluation terminée !", description: "Le coach IA a analysé votre performance." });
       } catch (error) {
           console.error("Error evaluating performance:", error);
@@ -602,12 +636,38 @@ export default function StudioPage() {
                  <CardDescription>Entraînez-vous et recevez un feedback de l'IA.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                 <div>
+                    <h3 className="font-headline text-lg flex items-center gap-2 mb-2">
+                        <Flame size={18} className="text-primary" />
+                        Échauffement Vocal
+                    </h3>
+                    <Carousel className="w-full max-w-xs mx-auto" opts={{align: "start", loop: true}}>
+                       <CarouselContent>
+                            {tongueTwisters.map((item, index) => (
+                                <CarouselItem key={index}>
+                                    <div className="p-1">
+                                        <Card className="bg-muted/50">
+                                            <CardContent className="flex flex-col items-center justify-center p-4 gap-2 text-center">
+                                                <p className="text-sm font-semibold">{item.name}</p>
+                                                <p className="text-xs text-muted-foreground">"{item.text}"</p>
+                                            </CardContent>
+                                        </Card>
+                                    </div>
+                                </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                        <CarouselPrevious className="h-6 w-6 -left-4" />
+                        <CarouselNext className="h-6 w-6 -right-4"/>
+                    </Carousel>
+                </div>
+                <Separator />
+
                 <Button className="w-full" variant={isRecording ? "destructive" : "secondary"} onClick={handleVirtualMicRecord} disabled={isEvaluatingPerformance}>
                     {isRecording && <div className="mr-2 h-2 w-2 rounded-full bg-white animate-pulse"></div>}
                     {isRecording ? "Arrêter l'enregistrement" : <><Mic size={16} className="mr-2"/>Lancer le coach vocal</>}
                 </Button>
 
-                 {(isEvaluatingPerformance || performanceResult) && (
+                 {(isEvaluatingPerformance || performanceResult || performanceHistory.length > 0) && (
                     <div className="space-y-4 pt-4">
                          <Separator />
                          {isEvaluatingPerformance && (
@@ -632,9 +692,26 @@ export default function StudioPage() {
                                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{performanceResult.improvements}</p>
                             </div>
                          )}
+                         {performanceHistory.length > 0 && !performanceResult && (
+                            <div>
+                                <h3 className="font-headline text-lg mb-2">Historique des 3 derniers scores</h3>
+                                 <div className="h-[100px]">
+                                    <ChartContainer config={{
+                                        score: { label: "Score", color: "hsl(var(--primary))" }
+                                    }}>
+                                        <BarChart 
+                                            accessibilityLayer
+                                            data={performanceHistory.map((h, i) => ({...h, name: `Essai ${i+1}`}))}
+                                            margin={{ top: 20, right: 0, left: 0, bottom: 0 }}
+                                        >
+                                            <Bar dataKey="score" fill="var(--color-score)" radius={4} maxBarSize={40} />
+                                        </BarChart>
+                                    </ChartContainer>
+                                </div>
+                            </div>
+                         )}
                     </div>
                  )}
-
               </CardContent>
             </Card>
 
@@ -684,3 +761,4 @@ export default function StudioPage() {
     </div>
   );
 }
+
