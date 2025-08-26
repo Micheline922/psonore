@@ -7,6 +7,7 @@ import {
   Lightbulb,
   Mic,
   Music,
+  Save,
   Share2,
   Users,
   Volume2,
@@ -35,6 +36,13 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   const [isListening, setIsListening] = useState(false);
+  
+  useEffect(() => {
+    const savedText = localStorage.getItem("plumeSonoreText");
+    if (savedText) {
+      setText(savedText);
+    }
+  }, []);
   
   // Placeholder for speech recognition
   useEffect(() => {
@@ -104,6 +112,14 @@ export default function Home() {
       setIsListening(true);
     }
   };
+  
+  const handleSave = () => {
+    localStorage.setItem("plumeSonoreText", text);
+    toast({
+      title: "Sauvegardé !",
+      description: "Votre texte a été sauvegardé localement.",
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8">
@@ -138,6 +154,10 @@ export default function Home() {
                      <Button variant="ghost" size="icon" onClick={handleMicClick} className={isListening ? 'bg-accent/20 text-accent' : ''}>
                       <Mic className="h-5 w-5" />
                       <span className="sr-only">Dicter du texte</span>
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={handleSave}>
+                      <Save className="h-5 w-5" />
+                      <span className="sr-only">Sauvegarder</span>
                     </Button>
                     <Button variant="ghost" size="icon">
                       <Share2 className="h-5 w-5" />
