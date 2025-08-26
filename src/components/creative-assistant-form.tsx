@@ -85,6 +85,8 @@ export default function CreativeAssistantForm({ text, onSubmit, isLoading }: Cre
                   <SelectItem value="poesie romantique">Poésie Romantique</SelectItem>
                   <SelectItem value="poesie engagee">Poésie Engagée</SelectItem>
                   <SelectItem value="conte">Conte</SelectItem>
+                  <SelectItem value="article">Article</SelectItem>
+                  <SelectItem value="podcast">Podcast</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
