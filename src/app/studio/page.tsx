@@ -375,7 +375,7 @@ export default function StudioPage() {
                  <CardDescription>Entraînez-vous à réciter vos textes.</CardDescription>
               </CardHeader>
               <CardContent className="text-center">
-                 <p className="text-muted-foreground mb-4">Prêt à monter sur scène ?</p>
+                 <p className="text-muted-foreground mb-4">Votre texte du bloc-notes sera lu ici.</p>
                 <Button className="w-full" variant="secondary" onClick={handleVirtualMic}>
                     <Mic size={16} className="mr-2"/>Lancer le micro virtuel
                 </Button>
@@ -414,4 +414,3 @@ export default function StudioPage() {
     </div>
   );
 }
-
