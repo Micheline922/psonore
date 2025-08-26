@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Send, BookOpen, Sparkles, MessageSquareQuestion } from "lucide-react";
+import { ArrowLeft, Loader2, Send, BookOpen, Sparkles, MessageSquareQuote } from "lucide-react";
 import { artTutor, ArtTutorInput } from "@/ai/flows/art-tutor-flow";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/logo";
@@ -108,7 +108,7 @@ export default function AcademyPage() {
         {/* Tutor Chat */}
         <div className="md:col-span-2 flex flex-col h-[calc(100vh-120px)] bg-card rounded-lg border">
             <header className="p-4 border-b flex items-center gap-2">
-                <MessageSquareQuestion className="h-6 w-6 text-accent" />
+                <MessageSquareQuote className="h-6 w-6 text-accent" />
                 <h2 className="text-lg font-headline">Conversation avec Maestro Plume</h2>
             </header>
             <main className="flex-1 overflow-y-auto p-4 space-y-6">
