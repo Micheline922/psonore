@@ -7,4 +7,14 @@ export type Creation = {
   date: string;
 };
 
+export type AcademyQuizQuestion = {
+    question: string;
+    options: string[];
+    correctAnswerIndex: number;
+};
+
+export type AcademyQuizAnswer = {
+    isCorrect: boolean;
+    explanation: string;
+};
     

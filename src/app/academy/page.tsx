@@ -4,8 +4,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Send, MessageSquareQuote, GraduationCap, PenLine, BrainCircuit, BookOpen, History } from "lucide-react";
+import { ArrowLeft, Loader2, Send, MessageSquareQuote, GraduationCap, PenLine, BrainCircuit, BookOpen, History, Radio } from "lucide-react";
 import { artTutor, ArtTutorInput } from "@/ai/flows/art-tutor-flow";
+import { generateAcademyQuiz, evaluateAcademyQuiz } from "@/ai/flows/academy-quiz-flow";
+import type { AcademyQuizQuestion, AcademyQuizAnswer } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/logo";
 import { Input } from "@/components/ui/input";
@@ -26,6 +28,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 
 type Message = {
@@ -88,6 +92,13 @@ export default function AcademyPage() {
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Quiz State
+  const [quizQuestion, setQuizQuestion] = useState<AcademyQuizQuestion | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [quizResult, setQuizResult] = useState<AcademyQuizAnswer | null>(null);
+  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
+  const [isEvaluatingQuiz, setIsEvaluatingQuiz] = useState(false);
+
   useEffect(() => {
     const savedArtist = localStorage.getItem("plumeSonoreArtist");
     if (!savedArtist) {
@@ -136,6 +147,40 @@ export default function AcademyPage() {
     }
   };
 
+  const handleNewQuiz = async () => {
+    setIsGeneratingQuiz(true);
+    setQuizQuestion(null);
+    setSelectedAnswer(null);
+    setQuizResult(null);
+    try {
+      const question = await generateAcademyQuiz();
+      setQuizQuestion(question);
+    } catch (error) {
+      console.error("Error generating quiz:", error);
+      toast({ title: "Erreur de l'IA", description: "Impossible de générer un nouveau quiz.", variant: "destructive" });
+    } finally {
+      setIsGeneratingQuiz(false);
+    }
+  };
+
+  const handleEvaluateQuiz = async () => {
+      if (selectedAnswer === null || !quizQuestion) return;
+      setIsEvaluatingQuiz(true);
+      try {
+          const result = await evaluateAcademyQuiz({
+              question: { question: quizQuestion.question, options: quizQuestion.options },
+              userAnswerIndex: selectedAnswer,
+              originalQuestion: quizQuestion,
+          });
+          setQuizResult(result);
+      } catch (error) {
+          console.error("Error evaluating quiz:", error);
+          toast({ title: "Erreur de l'IA", description: "L'évaluation a échoué.", variant: "destructive" });
+      } finally {
+          setIsEvaluatingQuiz(false);
+      }
+  };
+
   if (!artistName) {
     return (
         <div className="flex items-center justify-center min-h-screen">
@@ -164,10 +209,11 @@ export default function AcademyPage() {
       <main className="max-w-6xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
             <Tabs defaultValue="beginner">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="beginner"><PenLine className="mr-2" />Débutant</TabsTrigger>
                     <TabsTrigger value="intermediate"><BrainCircuit className="mr-2"/>Intermédiaire</TabsTrigger>
                     <TabsTrigger value="advanced"><BookOpen className="mr-2"/>Évolué</TabsTrigger>
+                    <TabsTrigger value="quiz"><Radio className="mr-2"/>Quiz</TabsTrigger>
                 </TabsList>
                 <TabsContent value="beginner">
                     <Card>
@@ -199,6 +245,64 @@ export default function AcademyPage() {
                         </CardHeader>
                         <CardContent>
                             {renderLessons(advancedLessons)}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                 <TabsContent value="quiz">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="font-headline text-2xl">Quiz Interactif</CardTitle>
+                            <CardDescription>Testez vos connaissances et apprenez en vous amusant.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            {!quizQuestion && !isGeneratingQuiz && (
+                                <div className="text-center space-y-4 py-8">
+                                    <p>Prêt à défier vos neurones créatifs ?</p>
+                                    <Button onClick={handleNewQuiz}>
+                                        Générer une question
+                                    </Button>
+                                </div>
+                            )}
+                            {isGeneratingQuiz && <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary h-8 w-8"/></div>}
+                            
+                            {quizQuestion && (
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">{quizQuestion.question}</h3>
+                                    <RadioGroup
+                                        value={selectedAnswer !== null ? String(selectedAnswer) : undefined}
+                                        onValueChange={(value) => setSelectedAnswer(Number(value))}
+                                        disabled={!!quizResult || isEvaluatingQuiz}
+                                    >
+                                        {quizQuestion.options.map((option, index) => (
+                                            <div key={index} className="flex items-center space-x-2">
+                                                <RadioGroupItem value={String(index)} id={`q-option-${index}`} />
+                                                <Label htmlFor={`q-option-${index}`}>{option}</Label>
+                                            </div>
+                                        ))}
+                                    </RadioGroup>
+                                    
+                                    {!quizResult && (
+                                        <Button onClick={handleEvaluateQuiz} disabled={selectedAnswer === null || isEvaluatingQuiz}>
+                                            {isEvaluatingQuiz ? <Loader2 className="animate-spin mr-2"/> : null}
+                                            Valider ma réponse
+                                        </Button>
+                                    )}
+                                    
+                                    {quizResult && (
+                                        <Card className={cn("border-2", quizResult.isCorrect ? "border-green-500" : "border-destructive")}>
+                                            <CardHeader>
+                                                <CardTitle className={cn("text-xl", quizResult.isCorrect ? "text-green-500" : "text-destructive")}>
+                                                    {quizResult.isCorrect ? "Bonne réponse !" : "Réponse incorrecte"}
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
+                                                <p className="text-sm">{quizResult.explanation}</p>
+                                                <Button onClick={handleNewQuiz}>Question suivante</Button>
+                                            </CardContent>
+                                        </Card>
+                                    )}
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </TabsContent>
