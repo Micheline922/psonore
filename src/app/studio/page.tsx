@@ -26,10 +26,10 @@ import { generateCreativeText } from "@/ai/flows/creative-ai-assistant";
 import {
     generateQuizChallenge,
     evaluatePunchline,
-    EvaluatePunchlineInput,
-    EvaluatePunchlineOutput,
+    type EvaluatePunchlineInput,
+    type EvaluatePunchlineOutput,
 } from "@/ai/flows/punchline-quiz-flow";
-import { evaluatePerformance, EvaluatePerformanceInput, EvaluatePerformanceOutput } from "@/ai/flows/evaluate-performance-flow";
+import { evaluatePerformance, type EvaluatePerformanceInput, type EvaluatePerformanceOutput } from "@/ai/flows/evaluate-performance-flow";
 import { Button } from "@/components/ui/button";
 import {
   Card,

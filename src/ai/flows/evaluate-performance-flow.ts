@@ -12,13 +12,13 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const EvaluatePerformanceInputSchema = z.object({
+const EvaluatePerformanceInputSchema = z.object({
   originalText: z.string().describe('The original text the user was supposed to recite.'),
   userRecitation: z.string().describe("The user's spoken performance, transcribed to text."),
 });
 export type EvaluatePerformanceInput = z.infer<typeof EvaluatePerformanceInputSchema>;
 
-export const EvaluatePerformanceOutputSchema = z.object({
+const EvaluatePerformanceOutputSchema = z.object({
   score: z.number().min(0).max(10).describe('The overall score for the performance, from 0 to 10.'),
   positives: z.string().describe('Specific feedback on what was good about the performance.'),
   improvements: z.string().describe('Constructive suggestions for how to improve the performance.'),
