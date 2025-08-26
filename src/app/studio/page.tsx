@@ -24,6 +24,7 @@ import {
   Flame,
   BookMarked,
   Search,
+  ChevronDown,
 } from "lucide-react";
 import { generateCreativeText } from "@/ai/flows/creative-ai-assistant";
 import {
@@ -81,6 +82,14 @@ import {
 } from "@/components/ui/carousel";
 import { Bar, BarChart, ResponsiveContainer } from "recharts"
 import { ChartContainer } from "@/components/ui/chart";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 
 type QuizResult = {
     score: number;
@@ -796,8 +805,26 @@ export default function StudioPage() {
                              </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
+                             <div className="space-y-2">
+                                <Label>Choisir un texte d'entraînement</Label>
+                                <Select onValueChange={(value) => setPerformanceText(value)}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Sélectionnez un virelangue..."/>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {tongueTwisters.map(t => (
+                                            <SelectItem key={t.name} value={t.text}>{t.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Separator className="flex-1"/>
+                                <span className="text-xs text-muted-foreground">OU</span>
+                                <Separator className="flex-1"/>
+                            </div>
                             <div className="space-y-2">
-                                <Label htmlFor="performance-text">Votre Texte à Réciter</Label>
+                                <Label htmlFor="performance-text">Votre Texte Personnel</Label>
                                 <Textarea 
                                     id="performance-text"
                                     placeholder="Collez ou écrivez votre texte ici..."
@@ -914,3 +941,5 @@ export default function StudioPage() {
     </div>
   );
 }
+
+    
