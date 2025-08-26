@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Heart, MessageSquare, Send } from "lucide-react";
+import { Heart, MessageSquare, Send, MessageCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "./ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -59,7 +59,12 @@ export default function CommunityPost({ post, onLike, onComment, currentArtist }
             </Avatar>
         </Link>
         <div className="flex-1">
-          <p className="font-bold text-primary">{post.author}</p>
+            <div className="flex items-center gap-2">
+                <p className="font-bold text-primary">{post.author}</p>
+                <Link href="/community/chat">
+                    <MessageCircle className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer" />
+                </Link>
+            </div>
           <p className="text-xs text-muted-foreground">{post.timestamp}</p>
         </div>
       </CardHeader>
