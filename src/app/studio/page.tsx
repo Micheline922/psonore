@@ -58,6 +58,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import type { Creation } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -147,6 +155,7 @@ export default function StudioPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [isEvaluatingPerformance, setIsEvaluatingPerformance] = useState(false);
   const [performanceResult, setPerformanceResult] = useState<EvaluatePerformanceOutput | null>(null);
+  const [performanceText, setPerformanceText] = useState("");
   const recognitionRef = useRef<any>(null);
   const [performanceHistory, setPerformanceHistory] = useState<{ score: number }[]>([]);
 
@@ -339,7 +348,7 @@ export default function StudioPage() {
       recognitionRef.current?.stop();
       setIsRecording(false);
     } else {
-        if(text.trim().length < 10) {
+        if(performanceText.trim().length < 10) {
              toast({ title: "Texte trop court", description: "Veuillez écrire au moins 10 caractères avant de vous enregistrer.", variant: "destructive" });
              return;
         }
@@ -354,7 +363,7 @@ export default function StudioPage() {
       setIsEvaluatingPerformance(true);
       try {
           const input: EvaluatePerformanceInput = {
-              originalText: text,
+              originalText: performanceText,
               userRecitation: transcript,
           };
           const result = await evaluatePerformance(input);
@@ -689,56 +698,90 @@ export default function StudioPage() {
                 </div>
                 <Separator />
 
-                <Button className="w-full" variant={isRecording ? "destructive" : "secondary"} onClick={handleVirtualMicRecord} disabled={isEvaluatingPerformance}>
-                    {isRecording && <div className="mr-2 h-2 w-2 rounded-full bg-white animate-pulse"></div>}
-                    {isRecording ? "Arrêter l'enregistrement" : <><Mic size={16} className="mr-2"/>Lancer le coach vocal</>}
-                </Button>
+                <Dialog>
+                    <DialogTrigger asChild>
+                         <Button className="w-full">
+                            <Mic size={16} className="mr-2"/>Lancer le coach vocal
+                         </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-lg">
+                        <DialogHeader>
+                            <DialogTitle className="font-headline text-2xl flex items-center gap-2">
+                                <Mic className="text-accent"/> Coach Vocal IA
+                            </DialogTitle>
+                             <DialogDescription>
+                                Copiez votre texte, enregistrez votre performance et recevez un feedback instantané.
+                             </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="performance-text">Votre Texte à Réciter</Label>
+                                <Textarea 
+                                    id="performance-text"
+                                    placeholder="Collez ou écrivez votre texte ici..."
+                                    value={performanceText}
+                                    onChange={(e) => setPerformanceText(e.target.value)}
+                                    className="min-h-[150px]"
+                                    disabled={isRecording || isEvaluatingPerformance}
+                                />
+                            </div>
+                            <Button 
+                                variant={isRecording ? "destructive" : "secondary"} 
+                                onClick={handleVirtualMicRecord} 
+                                disabled={isEvaluatingPerformance || !performanceText}
+                            >
+                                {isRecording && <div className="mr-2 h-2 w-2 rounded-full bg-white animate-pulse"></div>}
+                                {isRecording ? "Enregistrement..." : "Lancer l'enregistrement"}
+                            </Button>
+                        </div>
+                        
+                         {(isEvaluatingPerformance || performanceResult || performanceHistory.length > 0) && (
+                            <div className="space-y-4 pt-4">
+                                 <Separator />
+                                 {isEvaluatingPerformance && (
+                                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                                        <Loader2 className="animate-spin" />
+                                        <p>Analyse de votre performance...</p>
+                                    </div>
+                                 )}
+                                 {performanceResult && (
+                                    <div>
+                                        <h3 className="font-headline text-lg mb-2">Analyse du Coach</h3>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="font-bold">Score Global</span>
+                                            <Badge className="text-lg">{performanceResult.score}/10</Badge>
+                                        </div>
+                                        <Progress value={performanceResult.score * 10} className="h-2 mb-4" />
+                                        
+                                        <h4 className="font-semibold flex items-center gap-2 mb-1"><Star size={16} className="text-primary"/>Points forts :</h4>
+                                        <p className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap">{performanceResult.positives}</p>
 
-                 {(isEvaluatingPerformance || performanceResult || performanceHistory.length > 0) && (
-                    <div className="space-y-4 pt-4">
-                         <Separator />
-                         {isEvaluatingPerformance && (
-                            <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                                <Loader2 className="animate-spin" />
-                                <p>Analyse de votre performance...</p>
+                                        <h4 className="font-semibold flex items-center gap-2 mb-1"><RefreshCw size={16} className="text-accent"/>Axes d'amélioration :</h4>
+                                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{performanceResult.improvements}</p>
+                                    </div>
+                                 )}
+                                 {performanceHistory.length > 0 && !performanceResult && (
+                                    <div>
+                                        <h3 className="font-headline text-lg mb-2">Historique des 3 derniers scores</h3>
+                                         <div className="h-[100px]">
+                                            <ChartContainer config={{
+                                                score: { label: "Score", color: "hsl(var(--primary))" }
+                                            }}>
+                                                <BarChart 
+                                                    accessibilityLayer
+                                                    data={performanceHistory.map((h, i) => ({...h, name: `Essai ${i+1}`}))}
+                                                    margin={{ top: 20, right: 0, left: 0, bottom: 0 }}
+                                                >
+                                                    <Bar dataKey="score" fill="var(--color-score)" radius={4} maxBarSize={40} />
+                                                </BarChart>
+                                            </ChartContainer>
+                                        </div>
+                                    </div>
+                                 )}
                             </div>
                          )}
-                         {performanceResult && (
-                            <div>
-                                <h3 className="font-headline text-lg mb-2">Analyse du Coach IA</h3>
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="font-bold">Score Global</span>
-                                    <Badge className="text-lg">{performanceResult.score}/10</Badge>
-                                </div>
-                                <Progress value={performanceResult.score * 10} className="h-2 mb-4" />
-                                
-                                <h4 className="font-semibold flex items-center gap-2 mb-1"><Star size={16} className="text-primary"/>Points forts :</h4>
-                                <p className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap">{performanceResult.positives}</p>
-
-                                <h4 className="font-semibold flex items-center gap-2 mb-1"><RefreshCw size={16} className="text-accent"/>Axes d'amélioration :</h4>
-                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{performanceResult.improvements}</p>
-                            </div>
-                         )}
-                         {performanceHistory.length > 0 && !performanceResult && (
-                            <div>
-                                <h3 className="font-headline text-lg mb-2">Historique des 3 derniers scores</h3>
-                                 <div className="h-[100px]">
-                                    <ChartContainer config={{
-                                        score: { label: "Score", color: "hsl(var(--primary))" }
-                                    }}>
-                                        <BarChart 
-                                            accessibilityLayer
-                                            data={performanceHistory.map((h, i) => ({...h, name: `Essai ${i+1}`}))}
-                                            margin={{ top: 20, right: 0, left: 0, bottom: 0 }}
-                                        >
-                                            <Bar dataKey="score" fill="var(--color-score)" radius={4} maxBarSize={40} />
-                                        </BarChart>
-                                    </ChartContainer>
-                                </div>
-                            </div>
-                         )}
-                    </div>
-                 )}
+                    </DialogContent>
+                </Dialog>
               </CardContent>
             </Card>
 
@@ -789,3 +832,4 @@ export default function StudioPage() {
   );
 }
 
+    
