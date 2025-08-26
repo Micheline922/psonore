@@ -4,25 +4,92 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Send, BookOpen, Sparkles, MessageSquareQuote, Brain, CheckCircle, XCircle } from "lucide-react";
+import { ArrowLeft, Loader2, Send, MessageSquareQuote, GraduationCap, PenLine, BrainCircuit, BookOpen, History, Radio } from "lucide-react";
 import { artTutor, ArtTutorInput } from "@/ai/flows/art-tutor-flow";
-import { generateAcademyQuiz, evaluateAcademyQuiz, type AcademyQuizQuestion, type EvaluateAcademyQuizInput, type EvaluateAcademyQuizOutput } from "@/ai/flows/academy-quiz-flow";
+import { generateAcademyQuiz, evaluateAcademyQuiz, type AcademyQuizQuestion, type AcademyQuizAnswer } from "@/ai/flows/academy-quiz-flow";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/logo";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 type Message = {
     role: 'user' | 'model';
     content: string;
 };
+
+// Content for lessons
+const beginnerLessons = [
+    { week: "Semaine 1-2: Les Fondamentaux", title: "C'est quoi, un vers ? C'est quoi, une strophe ?", content: "On commence par les bases ! Un vers est une ligne de votre poème. Une strophe est un groupe de vers, comme un paragraphe. On va jouer avec pour construire nos premières idées." },
+    { week: "Semaine 3-4: Le Rythme et la Rime", title: "Trouver le tempo de ses mots", content: "La poésie, c'est de la musique. On explore comment les rimes (les sons qui se répètent à la fin des vers) et le rythme (la pulsation de vos phrases) peuvent rendre un texte vivant et mémorable." },
+    { week: "Semaine 5-6: Les Figures de Style Simples", title: "Comparer et imaginer", content: "Apprenons à peindre avec les mots. On découvre la comparaison ('rouge comme une tomate') et la métaphore ('cette idée est une lumière') pour créer des images puissantes dans la tête de ceux qui vous lisent." },
+    { week: "Semaine 7-8: L'Art de la Punchline", title: "Frapper fort avec les mots", content: "Une punchline, c'est le vers qui marque, celui qu'on retient. On analyse des exemples et on s'entraîne à écrire des phrases courtes, percutantes et pleines de sens." },
+    { week: "Semaine 9-10: Vaincre la Page Blanche", title: "Exercices de créativité", content: "Tout le monde bloque parfois. On apprend des techniques simples pour faire jaillir les idées : écriture automatique, jeux de mots, brainstorming... L'important, c'est de se lancer !" }
+];
+
+const intermediateLessons = [
+    { week: "Semaine 11-12: Le Storytelling", title: "Raconter une histoire en vers", content: "Un poème peut raconter une histoire. On apprend à construire un récit : situation initiale, péripéties, conclusion. Comment faire voyager l'auditeur en quelques strophes ?" },
+    { week: "Semaine 13-14: La Voix Narrative", title: "Qui parle dans votre texte ?", content: "Est-ce vous ? Un personnage ? Un observateur ? On explore comment le choix du narrateur (le 'je', le 'tu', le 'il') change complètement la perspective et l'impact d'un texte." },
+    { week: "Semaine 15-16: Développer son Style Personnel", title: "Trouver sa signature", content: "Quel est votre univers ? Vos thèmes de prédilection ? Votre manière unique de jouer avec les mots ? On travaille sur l'identité artistique pour rendre vos textes reconnaissables." },
+    { week: "Semaine 17-18: Les Figures de Style Avancées", title: "Maîtriser les subtilités", content: "On va plus loin avec l'allitération (répétition de consonnes), l'assonance (répétition de voyelles) et le symbole pour ajouter des couches de sens et de musicalité à vos écrits." },
+    { week: "Semaine 19-20: La Réécriture et le Polissage", title: "De la première version à l'oeuvre finale", content: "Le premier jet n'est que le début. On apprend à relire, couper, réorganiser, choisir le mot juste. C'est l'étape cruciale pour transformer une bonne idée en un texte exceptionnel." }
+];
+
+const advancedLessons = [
+    { week: "Semaine 21-22: La Poésie Expérimentale", title: "Briser les codes", content: "Et si on oubliait les règles ? On explore le vers libre, la poésie visuelle, les structures non conventionnelles. L'objectif : repousser les limites de l'expression." },
+    { week: "Semaine 23-24: L'Écriture Engagée", title: "Mettre sa plume au service d'une cause", content: "L'art peut changer le monde. On étudie comment des artistes ont utilisé leurs mots pour dénoncer, inspirer le changement et défendre des idées. Comment allier message et forme poétique ?" },
+    { week: "Semaine 25-26: La Performance Scénique", title: "Incarner son texte", content: "Le slam et la poésie sont des arts vivants. On travaille la diction, la posture, la gestion du silence, l'interaction avec le public. Comment faire de votre texte une expérience inoubliable ?" },
+    { week: "Semaine 27-28: L'Intertextualité", title: "Dialoguer avec d'autres oeuvres", content: "Vos textes ne naissent pas de rien. Ils sont en conversation avec d'autres poèmes, chansons, films... On apprend à utiliser les références et les clins d'oeil pour enrichir ses créations." },
+    { week: "Semaine 29-30: Le Projet Artistique", title: "Construire un recueil ou un spectacle", content: "Comment passer de plusieurs textes à un projet cohérent ? On aborde la thématique, le fil rouge, l'organisation des textes pour créer une oeuvre complète et aboutie. Le voyage artistique est sans fin." }
+];
+
+const artHistoryLessons = [
+    { week: "Le Romantisme", title: "L'expression du moi et des passions", content: "Au début du 19e siècle, des artistes comme Victor Hugo en littérature ou Delacroix en peinture ont mis l'accent sur l'émotion, le rêve, la nature et la liberté individuelle. Comment utiliser cette intensité pour nourrir vos propres textes sur l'amour, la solitude ou la révolte ?" },
+    { week: "Le Surréalisme", title: "Explorer l'inconscient et le rêve", content: "Avec des figures comme André Breton et Salvador Dalí, ce mouvement du 20e siècle a cherché à libérer la création des contraintes de la logique. L'écriture automatique, les associations d'idées inattendues... et si vous laissiez votre inconscient écrire la prochaine punchline ?" },
+    { week: "La Renaissance", title: "L'humain au centre de tout", content: "Période de grands bouleversements (15e-16e siècles), la Renaissance a célébré le génie humain avec des artistes comme Léonard de Vinci et des poètes comme Ronsard. Comment la quête d'harmonie, de beauté et de connaissance peut-elle inspirer une écriture qui célèbre la complexité de l'être humain ?" }
+];
+
+
+const renderLessons = (lessons: { week: string; title: string; content: string; }[]) => {
+    return (
+         <Accordion type="single" collapsible className="w-full">
+            {lessons.map((lesson, index) => (
+                <AccordionItem value={`item-${index}`} key={index}>
+                    <AccordionTrigger className="text-left hover:no-underline">
+                        <div className="flex flex-col">
+                            <p className="text-sm font-semibold text-primary">{lesson.week}</p>
+                            <h4 className="font-headline text-lg">{lesson.title}</h4>
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                        <p className="whitespace-pre-wrap">{lesson.content}</p>
+                    </AccordionContent>
+                </AccordionItem>
+            ))}
+        </Accordion>
+    );
+};
+
 
 export default function AcademyPage() {
   const [artistName, setArtistName] = useState<string | null>(null);
@@ -34,11 +101,14 @@ export default function AcademyPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Quiz State
-  const [quizQuestion, setQuizQuestion] = useState<AcademyQuizQuestion | null>(null);
-  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
+  const [quizQuestions, setQuizQuestions] = useState<AcademyQuizQuestion[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
-  const [quizResult, setQuizResult] = useState<EvaluateAcademyQuizOutput | null>(null);
-  const [isEvaluatingQuiz, setIsEvaluatingQuiz] = useState(false);
+  const [quizScore, setQuizScore] = useState(0);
+  const [quizFeedback, setQuizFeedback] = useState<string | null>(null);
+  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
+  const [isQuizFinished, setIsQuizFinished] = useState(false);
+
 
   useEffect(() => {
     const savedArtist = localStorage.getItem("plumeSonoreArtist");
@@ -47,7 +117,7 @@ export default function AcademyPage() {
     } else {
       setArtistName(savedArtist);
       setMessages([
-          { role: 'model', content: `Bonjour ${savedArtist}, je suis Maestro Plume. Bienvenue à l'Académie. Quelle est ta première question sur l'art de l'écriture ?` }
+          { role: 'model', content: `Bonjour ${savedArtist}, je suis Maestro Plume. Bienvenue à l'Académie. Pose-moi une question sur une des leçons, ou explore les différents parcours !` }
       ]);
     }
   }, [router]);
@@ -82,43 +152,51 @@ export default function AcademyPage() {
         description: "La connexion avec l'académie est instable. Veuillez réessayer.",
         variant: "destructive",
       });
-       setMessages(prev => prev.slice(0, -1)); // Remove user message on error
+       setMessages(prev => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleNewQuestion = async () => {
+  const startNewQuiz = async () => {
     setIsGeneratingQuiz(true);
-    setQuizQuestion(null);
+    setQuizFeedback(null);
     setSelectedAnswer(null);
-    setQuizResult(null);
+    setQuizScore(0);
+    setCurrentQuestionIndex(0);
+    setIsQuizFinished(false);
     try {
-        const result = await generateAcademyQuiz();
-        setQuizQuestion(result.question);
+        const {questions} = await generateAcademyQuiz();
+        setQuizQuestions(questions);
     } catch(e) {
-        toast({ title: "Erreur", description: "Impossible de générer une question.", variant: "destructive"})
+        toast({ title: "Erreur", description: "Impossible de créer le quiz.", variant: "destructive"});
     } finally {
         setIsGeneratingQuiz(false);
     }
-  };
+  }
 
-  const handleEvaluateAnswer = async () => {
-    if (!selectedAnswer || !quizQuestion) return;
-    setIsEvaluatingQuiz(true);
-    try {
-        const input: EvaluateAcademyQuizInput = {
-            question: quizQuestion.question,
-            options: quizQuestion.options,
-            userAnswer: selectedAnswer
-        };
-        const result = await evaluateAcademyQuiz(input);
-        setQuizResult(result);
-    } catch (e) {
-         toast({ title: "Erreur", description: "Impossible d'évaluer la réponse.", variant: "destructive"})
-    } finally {
-        setIsEvaluatingQuiz(false);
-    }
+  const handleAnswerSubmit = async () => {
+      if (!selectedAnswer || !quizQuestions) return;
+
+      const answer: AcademyQuizAnswer = {
+          question: quizQuestions[currentQuestionIndex],
+          selectedAnswer: selectedAnswer,
+      }
+      const { feedback, isCorrect } = await evaluateAcademyQuiz(answer);
+      setQuizFeedback(feedback);
+      if(isCorrect) {
+          setQuizScore(s => s + 1);
+      }
+  }
+  
+  const handleNextQuestion = () => {
+      if(currentQuestionIndex < quizQuestions.length - 1) {
+          setCurrentQuestionIndex(i => i + 1);
+          setSelectedAnswer(null);
+          setQuizFeedback(null);
+      } else {
+          setIsQuizFinished(true);
+      }
   }
 
 
@@ -129,56 +207,6 @@ export default function AcademyPage() {
         </div>
     )
   }
-
-  const renderLessons = (lessons: { title: string, content: string }[]) => (
-     <Accordion type="single" collapsible className="w-full">
-        {lessons.map((lesson, index) => (
-            <AccordionItem value={`item-${index}`} key={index}>
-                <AccordionTrigger>{lesson.title}</AccordionTrigger>
-                <AccordionContent className="whitespace-pre-wrap">{lesson.content}</AccordionContent>
-            </AccordionItem>
-        ))}
-    </Accordion>
-  );
-
-  const beginnerLessons = [
-    { title: "Semaine 1: Les Bases de la Rime", content: "La rime est la répétition d'un même son. On distingue les rimes pauvres (1 son commun, ex: pas/chocolat), suffisantes (2 sons, ex: parole/folle), et riches (3 sons+, ex: image/sage). La disposition (AABB, ABAB, ABBA) crée le schéma de rimes." },
-    { title: "Semaine 2: Le Rythme et le Pied", content: "Le rythme en poésie est créé par la succession de syllabes accentuées et non accentuées. Le 'pied' est l'unité de base (ex: un alexandrin a 12 pieds/syllabes). Compter les syllabes est essentiel pour donner une cadence à votre texte." },
-    { title: "Semaine 3: La Métaphore et la Comparaison", content: "La comparaison rapproche deux éléments avec un outil de comparaison ('comme', 'tel que'). Ex: 'Ses yeux brillaient comme des étoiles'.\nLa métaphore fait la même chose mais sans outil. Ex: 'Ses yeux sont des étoiles'." },
-    { title: "Semaine 4: La Structure d'un Quatrain", content: "Un quatrain est une strophe de quatre vers. C'est la structure la plus courante. Elle permet de développer une idée de manière concise. Pratiquez en écrivant des quatrains sur des thèmes simples." },
-    { title: "Semaine 5: Trouver l'Inspiration", content: "L'inspiration est partout. Observez le monde, notez des idées, lisez d'autres artistes, écoutez de la musique. L'exercice du 'brainstorming' (lister tous les mots liés à un thème) est très efficace pour démarrer." },
-    { title: "Semaine 6: Allitération et Assonance", content: "L'allitération est la répétition d'un son consonne (ex: 'Pour qui sont ces serpents qui sifflent...').\nL'assonance est la répétition d'un son voyelle (ex: 'Tout m'afflige et me nuit et conspire à me nuire'). Elles ajoutent de la musicalité." },
-    { title: "Semaine 7: Le Champ Lexical", content: "Un champ lexical est un ensemble de mots se rapportant à une même idée. Ex: pour la mer -> vague, sel, écume, bateau. Utiliser un champ lexical riche renforce l'atmosphère de votre texte." },
-    { title: "Semaine 8: Introduction au Storytelling", content: "Le storytelling, c'est l'art de raconter une histoire. Un bon texte a souvent un début (situation initiale), un milieu (un événement, une émotion) et une fin (une résolution, une chute). Pensez à la petite histoire que vous voulez raconter." },
-    { title: "Semaine 9: La Personnification", content: "La personnification consiste à attribuer des caractéristiques humaines à un objet ou une idée. Ex: 'Le vent hurlait sa colère'. C'est une technique puissante pour créer des images fortes." },
-    { title: "Semaine 10: La Relecture et la Correction", content: "Un texte n'est jamais parfait du premier coup. Laissez-le reposer, puis relisez-le à voix haute pour entendre son rythme. Corrigez les fautes, mais aussi les vers qui 'sonnent' mal. C'est une étape cruciale." },
-  ];
-  
-  const intermediateLessons = [
-      { title: "Semaine 11: Le Rythme Binaire et Ternaire", content: "Le rythme binaire (2 temps) est stable, carré (ex: rap old school). Le rythme ternaire (3 temps) est plus dansant, balancé (ex: valse, beaucoup de trap). Jouer avec ces rythmes fait varier le 'flow'." },
-      { title: "Semaine 12: Les Rimes Internes et Multisyllabiques", content: "La rime interne se trouve à l'intérieur d'un même vers ('Il pleure dans mon coeur / Comme il pleut sur la ville').\nLa rime multisyllabique fait rimer plusieurs syllabes (ex: 'illégal' / 'ville-Eiffel'). C'est une marque de technicité." },
-      { title: "Semaine 13: L'Oxymore et l'Antithèse", content: "L'oxymore allie deux mots de sens contradictoires dans une même expression (ex: 'un silence assourdissant').\nL'antithèse oppose deux idées dans une phrase ou un paragraphe pour créer un contraste saisissant." },
-      { title: "Semaine 14: La Structure Narrative (Schéma Quinaire)", content: "Une histoire se structure souvent en 5 étapes: 1. Situation initiale. 2. Élément déclencheur. 3. Péripéties. 4. Dénouement (résolution du problème). 5. Situation finale. Appliquez ceci à vos textes pour les rendre plus captivants." },
-      { title: "Semaine 15: Le Point de Vue Narratif", content: "Qui parle ? Vous ('je'), un observateur externe ('il/elle'), ou vous vous adressez au lecteur ('tu'/'vous') ? Changer de point de vue peut transformer radicalement l'impact d'un texte." },
-      { title: "Semaine 16: Le Symbole et l'Allégorie", content: "Un symbole est un objet ou une image qui représente une idée abstraite (ex: la colombe pour la paix).\nL'allégorie est une histoire entière qui représente une idée (ex: La Fontaine utilise des animaux pour parler des humains)." },
-      { title: "Semaine 17: Le 'Show, Don't Tell'", content: "Au lieu de dire une émotion ('il était triste'), montrez-la par des actions ou des descriptions ('Une larme roula sur sa joue, son regard fixé sur le sol'). C'est beaucoup plus immersif pour l'auditeur." },
-      { title: "Semaine 18: Développer son Style Unique", content: "Votre style, c'est votre signature. C'est un mélange de vos thèmes préférés, votre vocabulaire, votre rythme, votre ton. Analysez vos textes et ceux que vous admirez pour comprendre ce qui vous rend unique." },
-      { title: "Semaine 19: L'Anaphore et la Répétition", content: "L'anaphore est la répétition d'un mot ou groupe de mots en début de phrase/vers. Elle crée un effet d'insistance puissant (ex: le discours 'I have a dream'). À utiliser pour marteler une idée." },
-      { title: "Semaine 20: Le Punchline et la Chute", content: "La punchline est un vers fort, mémorable, qui frappe l'esprit. La chute est la fin surprenante d'un texte. Pour en créer, jouez sur les doubles sens, les contrastes, et les images inattendues." },
-  ];
-  
-  const advancedLessons = [
-      { title: "Semaine 21: La Prosodie et l'Intonation", content: "La prosodie est la musicalité de la langue parlée (intonation, accent, pauses). Enregistrez-vous et analysez où placer les accents toniques pour maximiser l'impact émotionnel de vos vers. Votre voix est un instrument." },
-      { title: "Semaine 22: La Déconstruction des Formes Classiques", content: "Apprenez les règles du sonnet, de la ballade... puis brisez-les. Comment moderniser un sonnet ? Comment écrire un haïku en français ? Connaître les règles permet de les transgresser avec intention." },
-      { title: "Semaine 23: L'Intertextualité", content: "L'intertextualité, c'est le dialogue entre votre texte et d'autres œuvres (livres, films, musiques...). Faire des références subtiles ou des clins d'œil enrichit la lecture et ancre votre œuvre dans une culture plus large." },
-      { title: "Semaine 24: Le Métadiscours et la Mise en Abyme", content: "Le métadiscours, c'est quand le texte parle de lui-même (ex: un poème sur la difficulté d'écrire un poème). La mise en abyme est une œuvre dans l'œuvre. Ce sont des techniques complexes pour questionner l'art lui-même." },
-      { title: "Semaine 25: Écrire sous Contrainte (Style Oulipo)", content: "Imposez-vous des règles strictes pour stimuler votre créativité. Ex: n'écrivez qu'avec des mots commençant par 'P', ou sans utiliser la lettre 'e'. Ces contraintes forcent à trouver des solutions ingénieuses." },
-      { title: "Semaine 26: La Synesthésie", content: "La synesthésie est le mélange des sens. Ex: 'une odeur criarde', 'un silence bleu'. Cette figure de style crée des images poétiques très originales et mémorables en associant des perceptions habituellement séparées." },
-      { title: "Semaine 27: La Cohérence d'un Projet (Album, Recueil)", content: "Pensez au-delà du texte unique. Comment vos œuvres se répondent-elles ? Y a-t-il un fil rouge (thématique, stylistique, narratif) ? Construire un projet cohérent donne plus de force à votre message." },
-      { title: "Semaine 28: La Critique et l'Auto-Critique Constructive", content: "Apprenez à analyser une œuvre (la vôtre ou celle d'un autre) de manière objective. Séparez l'affectif du technique. Qu'est-ce qui fonctionne ? Qu'est-ce qui pourrait être amélioré et pourquoi ? Savoir critiquer est essentiel pour progresser." },
-      { title: "Semaine 29: Le Processus de Publication et de Diffusion", content: "Comment passer de l'écriture à la diffusion ? Scène ouverte, réseaux sociaux, plateformes de streaming, auto-édition... Explorez les différentes voies pour partager votre art avec un public." },
-      { title: "Semaine 30: Réinventer son Art", content: "Un artiste ne doit jamais stagner. Après avoir maîtrisé les techniques, comment vous réinventer ? Explorez de nouveaux thèmes, de nouveaux styles, collaborez avec d'autres artistes. Le voyage artistique est sans fin." },
-  ];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -191,179 +219,201 @@ export default function AcademyPage() {
                 </Link>
             </Button>
             <div className="text-center">
-                <h1 className="text-xl font-headline text-primary tracking-wider">Académie Plume Sonore</h1>
-                <p className="text-xs text-muted-foreground">Développez votre art, à votre rythme.</p>
+                <h1 className="text-xl font-headline text-primary tracking-wider flex items-center gap-2"><GraduationCap/>Académie Plume Sonore</h1>
             </div>
             <div className="w-10"></div>
         </div>
       </header>
-
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 p-4">
+      
+      <main className="max-w-6xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-            <Tabs defaultValue="debutant" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="debutant">Débutant</TabsTrigger>
-                    <TabsTrigger value="intermediaire">Intermédiaire</TabsTrigger>
-                    <TabsTrigger value="evolue">Évolué</TabsTrigger>
-                    <TabsTrigger value="quiz"><Sparkles className="mr-2 h-4 w-4"/>Quiz</TabsTrigger>
+            <Tabs defaultValue="beginner">
+                <TabsList className="grid w-full grid-cols-5">
+                    <TabsTrigger value="beginner"><PenLine className="mr-2" />Débutant</TabsTrigger>
+                    <TabsTrigger value="intermediate"><BrainCircuit className="mr-2"/>Intermédiaire</TabsTrigger>
+                    <TabsTrigger value="advanced"><BookOpen className="mr-2"/>Évolué</TabsTrigger>
+                    <TabsTrigger value="art-history"><History className="mr-2"/>Histoire de l'Art</TabsTrigger>
+                    <TabsTrigger value="quiz"><Radio className="mr-2"/>Quiz Interactif</TabsTrigger>
                 </TabsList>
-                <TabsContent value="debutant" className="mt-4">
+                <TabsContent value="beginner">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Parcours Débutant (0-10 semaines)</CardTitle>
-                            <CardDescription>Acquérez les bases fondamentales de l'écriture créative.</CardDescription>
+                            <CardTitle className="font-headline text-2xl">Parcours Débutant</CardTitle>
+                            <CardDescription>De 0 à 10 semaines : apprenez les bases de l'écriture créative.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {renderLessons(beginnerLessons)}
+                           {renderLessons(beginnerLessons)}
                         </CardContent>
                     </Card>
                 </TabsContent>
-                <TabsContent value="intermediaire" className="mt-4">
+                <TabsContent value="intermediate">
                      <Card>
                         <CardHeader>
-                            <CardTitle>Parcours Intermédiaire (10-20 semaines)</CardTitle>
-                            <CardDescription>Approfondissez votre technique et développez votre style.</CardDescription>
+                            <CardTitle className="font-headline text-2xl">Parcours Intermédiaire</CardTitle>
+                            <CardDescription>De 10 à 20 semaines : affinez votre style et vos techniques narratives.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {renderLessons(intermediateLessons)}
                         </CardContent>
                     </Card>
                 </TabsContent>
-                <TabsContent value="evolue" className="mt-4">
+                <TabsContent value="advanced">
                      <Card>
                         <CardHeader>
-                            <CardTitle>Parcours Évolué (20+ semaines)</CardTitle>
-                            <CardDescription>Maîtrisez les techniques avancées et explorez les limites de votre art.</CardDescription>
-                        </Header>
+                            <CardTitle className="font-headline text-2xl">Parcours Évolué</CardTitle>
+                            <CardDescription>20 semaines et plus : repoussez les limites de votre art.</CardDescription>
+                        </CardHeader>
                         <CardContent>
                             {renderLessons(advancedLessons)}
                         </CardContent>
                     </Card>
                 </TabsContent>
-                <TabsContent value="quiz" className="mt-4">
-                    <Card>
+                 <TabsContent value="art-history">
+                     <Card>
                         <CardHeader>
-                            <CardTitle>Quiz Interactif</CardTitle>
-                            <CardDescription>Testez vos connaissances et apprenez de manière ludique.</CardDescription>
+                            <CardTitle className="font-headline text-2xl">Histoire de l'Art</CardTitle>
+                            <CardDescription>Trouvez l'inspiration dans les grands mouvements artistiques.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-6">
-                            {!quizQuestion && !isGeneratingQuiz && (
-                                <div className="text-center space-y-4">
-                                    <p>Prêt à défier vos neurones poétiques ?</p>
-                                    <Button onClick={handleNewQuestion}>
-                                        <Sparkles className="mr-2 h-4 w-4" />
-                                        Générer une question
-                                    </Button>
-                                </div>
-                            )}
-                            {isGeneratingQuiz && <div className="flex justify-center"><Loader2 className="animate-spin text-primary"/></div>}
+                        <CardContent>
+                            {renderLessons(artHistoryLessons)}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                <TabsContent value="quiz">
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="font-headline text-2xl">Quiz Interactif</CardTitle>
+                            <CardDescription>Testez vos connaissances et apprenez en vous amusant.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex flex-col items-center justify-center min-h-[300px] space-y-4">
+                            {isGeneratingQuiz && <Loader2 className="animate-spin h-8 w-8 text-primary" />}
                             
-                            {quizQuestion && (
-                                <div className="space-y-4">
-                                    <p className="font-semibold text-lg">{quizQuestion.question}</p>
-                                    <RadioGroup
-                                        value={selectedAnswer ?? undefined}
-                                        onValueChange={setSelectedAnswer}
-                                        disabled={!!quizResult}
-                                    >
-                                        {quizQuestion.options.map((option, index) => (
-                                            <div key={index} className="flex items-center space-x-2">
-                                                <RadioGroupItem value={option} id={`q1-option${index}`}/>
-                                                <Label htmlFor={`q1-option${index}`}>{option}</Label>
+                            {!isGeneratingQuiz && quizQuestions.length === 0 && (
+                                <Button onClick={startNewQuiz}>Commencer un nouveau quiz</Button>
+                            )}
+                            
+                            {!isGeneratingQuiz && quizQuestions.length > 0 && !isQuizFinished && (
+                                <div className="w-full text-left space-y-4">
+                                    <p className="text-sm text-muted-foreground">Question {currentQuestionIndex + 1} / {quizQuestions.length}</p>
+                                    <h3 className="font-semibold text-lg">{quizQuestions[currentQuestionIndex].questionText}</h3>
+                                    
+                                    <RadioGroup value={selectedAnswer ?? ''} onValueChange={setSelectedAnswer} disabled={!!quizFeedback}>
+                                        {quizQuestions[currentQuestionIndex].options.map(option => (
+                                            <div key={option} className="flex items-center space-x-2">
+                                                <RadioGroupItem value={option} id={option} />
+                                                <Label htmlFor={option}>{option}</Label>
                                             </div>
                                         ))}
                                     </RadioGroup>
 
-                                    <Button onClick={handleEvaluateAnswer} disabled={!selectedAnswer || isEvaluatingQuiz || !!quizResult}>
-                                        {isEvaluatingQuiz ? <Loader2 className="animate-spin mr-2"/> : null}
-                                        Valider la réponse
-                                    </Button>
-
-                                    {quizResult && (
-                                        <div className={cn("p-4 rounded-md", quizResult.isCorrect ? "bg-green-100 dark:bg-green-900/30 border border-green-500/50" : "bg-red-100 dark:bg-red-900/30 border border-red-500/50")}>
-                                            <div className="flex items-center gap-2 mb-2">
-                                                {quizResult.isCorrect ? <CheckCircle className="text-green-600 dark:text-green-400" /> : <XCircle className="text-red-600 dark:text-red-400"/>}
-                                                <h3 className="font-bold text-lg">{quizResult.isCorrect ? "Correct !" : "Incorrect"}</h3>
-                                            </div>
-                                            <p className="text-sm whitespace-pre-wrap">{quizResult.explanation}</p>
-                                            <Button onClick={handleNewQuestion} variant="link" className="mt-2 px-0">Question suivante</Button>
+                                    {quizFeedback && (
+                                        <div className={cn(
+                                            "p-3 rounded-md text-sm",
+                                            quizFeedback.includes("Correct") ? "bg-green-500/10 text-green-700 border border-green-500/20" : "bg-red-500/10 text-red-700 border border-red-500/20"
+                                        )}>
+                                            {quizFeedback}
                                         </div>
                                     )}
+                                    
+                                    <div className="flex justify-end gap-2">
+                                        {!quizFeedback && (
+                                             <Button onClick={handleAnswerSubmit} disabled={!selectedAnswer}>Valider</Button>
+                                        )}
+                                        {quizFeedback && (
+                                            <Button onClick={handleNextQuestion}>
+                                                {currentQuestionIndex < quizQuestions.length - 1 ? "Question suivante" : "Terminer le quiz"}
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
                             )}
 
+                            {isQuizFinished && (
+                                <div className="text-center space-y-4">
+                                     <h3 className="font-headline text-2xl text-primary">Quiz Terminé !</h3>
+                                     <p>Votre score : <Badge className="text-lg">{quizScore} / {quizQuestions.length}</Badge></p>
+                                     <p className="text-muted-foreground max-w-md mx-auto">
+                                        {quizScore === quizQuestions.length ? "Excellent travail ! Vous maîtrisez le sujet." : "Continuez à apprendre avec les leçons et le tuteur. Chaque erreur est une opportunité !"}
+                                     </p>
+                                     <Button onClick={startNewQuiz}>Recommencer un quiz</Button>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </TabsContent>
             </Tabs>
         </div>
 
-        {/* Tutor Chat */}
-        <div className="flex flex-col h-[calc(100vh-120px)] bg-card rounded-lg border sticky top-24">
-            <header className="p-4 border-b flex items-center gap-2">
-                <MessageSquareQuote className="h-6 w-6 text-accent" />
-                <h2 className="text-lg font-headline">Maestro Plume</h2>
-            </header>
-            <main className="flex-1 overflow-y-auto p-4 space-y-6">
-                {messages.map((message, index) => (
-                    <div 
-                        key={index} 
-                        className={cn(
-                            "flex items-end gap-3",
-                            message.role === 'user' ? 'justify-end' : 'justify-start'
-                        )}
-                    >
-                        {message.role === 'model' && (
+        <aside className="h-full">
+             <div className="flex flex-col h-full bg-card rounded-lg border sticky top-24">
+                <header className="p-4 border-b flex items-center gap-2">
+                    <MessageSquareQuote className="h-6 w-6 text-accent" />
+                    <h2 className="text-lg font-headline">Maestro Plume</h2>
+                </header>
+                <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                    {messages.map((message, index) => (
+                        <div 
+                            key={index} 
+                            className={cn(
+                                "flex items-end gap-3",
+                                message.role === 'user' ? 'justify-end' : 'justify-start'
+                            )}
+                        >
+                            {message.role === 'model' && (
+                                <Avatar>
+                                    <AvatarImage src="https://picsum.photos/seed/Maestro/100/100" data-ai-hint="wise tutor" />
+                                    <AvatarFallback>MP</AvatarFallback>
+                                </Avatar>
+                            )}
+                            <div className={cn(
+                                "max-w-sm p-3 rounded-2xl text-sm",
+                                 message.role === 'user' 
+                                    ? 'bg-primary text-primary-foreground rounded-br-lg' 
+                                    : 'bg-muted rounded-bl-lg'
+                            )}>
+                               <p className="whitespace-pre-wrap">{message.content}</p>
+                            </div>
+                            {message.role === 'user' && (
+                                 <Avatar>
+                                    <AvatarImage src={`https://picsum.photos/seed/${artistName}/100/100`} data-ai-hint="user avatar" />
+                                    <AvatarFallback>{artistName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                            )}
+                        </div>
+                    ))}
+                     {isLoading && (
+                        <div className="flex items-end gap-3 justify-start">
                             <Avatar>
                                 <AvatarImage src="https://picsum.photos/seed/Maestro/100/100" data-ai-hint="wise tutor" />
                                 <AvatarFallback>MP</AvatarFallback>
                             </Avatar>
-                        )}
-                        <div className={cn(
-                            "max-w-md p-3 rounded-2xl",
-                             message.role === 'user' 
-                                ? 'bg-primary text-primary-foreground rounded-br-lg' 
-                                : 'bg-muted rounded-bl-lg'
-                        )}>
-                           <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                            <div className="max-w-md p-3 rounded-2xl bg-muted rounded-bl-lg">
+                                <Loader2 className="animate-spin text-primary" />
+                            </div>
                         </div>
-                        {message.role === 'user' && (
-                             <Avatar>
-                                <AvatarImage src={`https://picsum.photos/seed/${artistName}/100/100`} data-ai-hint="user avatar" />
-                                <AvatarFallback>{artistName.substring(0, 2).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                        )}
-                    </div>
-                ))}
-                 {isLoading && (
-                    <div className="flex items-end gap-3 justify-start">
-                        <Avatar>
-                            <AvatarImage src="https://picsum.photos/seed/Maestro/100/100" data-ai-hint="wise tutor" />
-                            <AvatarFallback>MP</AvatarFallback>
-                        </Avatar>
-                        <div className="max-w-md p-3 rounded-2xl bg-muted rounded-bl-lg">
-                            <Loader2 className="animate-spin text-primary" />
-                        </div>
-                    </div>
-                 )}
-                <div ref={messagesEndRef} />
-            </main>
-             <footer className="p-4 border-t bg-background rounded-b-lg">
-                <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                    <Input 
-                        placeholder="Posez votre question..."
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        disabled={isLoading}
-                    />
-                    <Button type="submit" size="icon" disabled={isLoading}>
-                        {isLoading ? <Loader2 className="animate-spin" /> : <Send />}
-                        <span className="sr-only">Envoyer</span>
-                    </Button>
-                </form>
-            </footer>
-        </div>
-      </div>
+                     )}
+                    <div ref={messagesEndRef} />
+                </div>
+                 <footer className="p-4 border-t bg-background rounded-b-lg">
+                    <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                        <Input 
+                            placeholder="Posez votre question..."
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            disabled={isLoading}
+                        />
+                        <Button type="submit" size="icon" disabled={isLoading}>
+                            {isLoading ? <Loader2 className="animate-spin" /> : <Send />}
+                            <span className="sr-only">Envoyer</span>
+                        </Button>
+                    </form>
+                </footer>
+            </div>
+        </aside>
+      </main>
     </div>
   );
 }
+
+
+    
