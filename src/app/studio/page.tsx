@@ -746,7 +746,8 @@ export default function StudioPage() {
                                  )}
                                  {performanceResult && (
                                     <div>
-                                        <h3 className="font-headline text-lg mb-2">Analyse du Coach</h3>
+                                        <h3 className="font-headline text-lg mb-2">Analyse de la Performance</h3>
+                                         <p className="text-sm text-muted-foreground mb-4">Voici le retour du coach IA sur votre récitation.</p>
                                         <div className="flex items-center justify-between mb-2">
                                             <span className="font-bold">Score Global</span>
                                             <Badge className="text-lg">{performanceResult.score}/10</Badge>
@@ -831,5 +832,3 @@ export default function StudioPage() {
     </div>
   );
 }
-
-    
