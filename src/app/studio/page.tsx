@@ -17,8 +17,16 @@ import {
   FolderKanban,
   HelpCircle,
   Wand2,
+  Loader2,
+  ChevronRight,
 } from "lucide-react";
-import { generateCreativeText, GenerateCreativeTextOutput } from "@/ai/flows/creative-ai-assistant";
+import { generateCreativeText } from "@/ai/flows/creative-ai-assistant";
+import {
+    generateQuizChallenge,
+    evaluatePunchline,
+    EvaluatePunchlineInput,
+    EvaluatePunchlineOutput,
+} from "@/ai/flows/punchline-quiz-flow";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -48,6 +56,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import type { Creation } from "@/lib/types";
+import { Badge } from "@/components/ui/badge";
 
 const proverbs = [
   "Là où le coeur est, les pieds n'hésitent pas à y aller.",
@@ -73,6 +82,14 @@ export default function StudioPage() {
   const searchParams = useSearchParams();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [proverb, setProverb] = useState("");
+
+  // State for Punchline Quiz
+  const [challengeWords, setChallengeWords] = useState<string[]>([]);
+  const [punchline, setPunchline] = useState("");
+  const [quizResult, setQuizResult] = useState<EvaluatePunchlineOutput | null>(null);
+  const [isGeneratingChallenge, setIsGeneratingChallenge] = useState(false);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+
 
   useEffect(() => {
     setProverb(proverbs[Math.floor(Math.random() * proverbs.length)]);
@@ -265,13 +282,50 @@ export default function StudioPage() {
       description: "Vous avez été déconnecté.",
     });
   };
+
+  const handleNewChallenge = async () => {
+    setIsGeneratingChallenge(true);
+    setQuizResult(null);
+    setPunchline("");
+    try {
+      const result = await generateQuizChallenge();
+      setChallengeWords(result.words);
+    } catch (error) {
+      console.error("Error generating challenge:", error);
+      toast({ title: "Erreur de l'IA", description: "Impossible de générer un nouveau défi.", variant: "destructive" });
+    } finally {
+      setIsGeneratingChallenge(false);
+    }
+  };
+
+  const handleEvaluatePunchline = async () => {
+    if (punchline.trim().length < 3) {
+      toast({ title: "Punchline trop courte", description: "Veuillez écrire une punchline plus longue.", variant: "destructive" });
+      return;
+    }
+    setIsEvaluating(true);
+    setQuizResult(null);
+    try {
+      const input: EvaluatePunchlineInput = {
+        challengeWords,
+        userPunchline: punchline,
+      };
+      const result = await evaluatePunchline(input);
+      setQuizResult(result);
+    } catch (error) {
+      console.error("Error evaluating punchline:", error);
+      toast({ title: "Erreur de l'IA", description: "L'évaluation a échoué. Veuillez réessayer.", variant: "destructive" });
+    } finally {
+      setIsEvaluating(false);
+    }
+  };
   
   if (!artistName) {
     return (
         <div className="flex items-center justify-center min-h-screen">
             <Logo className="h-24 w-24 text-primary animate-pulse" />
         </div>
-    )
+    );
   }
 
   return (
@@ -422,13 +476,63 @@ export default function StudioPage() {
                 </div>
                 <Separator />
                 <div>
-                    <h3 className="font-headline text-lg mb-2">Créer une Punchline</h3>
+                    <h3 className="font-headline text-lg mb-2">Comment créer une Punchline</h3>
                     <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
                         <li><span className="font-semibold text-foreground/80">Soyez bref et percutant :</span> Allez droit au but.</li>
                         <li><span className="font-semibold text-foreground/80">Utilisez des figures de style :</span> Métaphores, comparaisons, assonances.</li>
                         <li><span className="font-semibold text-foreground/80">Créez la surprise :</span> Terminez par une chute inattendue.</li>
                         <li><span className="font-semibold text-foreground/80">Jouez sur les mots :</span> Les doubles sens sont très efficaces.</li>
                     </ul>
+                </div>
+                 <Separator />
+                <div>
+                    <h3 className="font-headline text-lg mb-2">Défi Punchline</h3>
+                    {!challengeWords.length && (
+                        <Button onClick={handleNewChallenge} disabled={isGeneratingChallenge} className="w-full">
+                           {isGeneratingChallenge ? <Loader2 className="animate-spin mr-2" /> : <Wand2 className="mr-2" />}
+                            Nouveau Défi
+                        </Button>
+                    )}
+
+                    {challengeWords.length > 0 && (
+                        <div className="space-y-4">
+                            <p className="text-sm text-muted-foreground">Utilisez ces mots pour créer une punchline :</p>
+                            <div className="flex flex-wrap gap-2">
+                                {challengeWords.map(word => <Badge key={word} variant="secondary">{word}</Badge>)}
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="punchline">Votre Punchline</Label>
+                                <Textarea
+                                id="punchline"
+                                value={punchline}
+                                onChange={(e) => setPunchline(e.target.value)}
+                                placeholder="Écrivez votre punchline ici..."
+                                disabled={isEvaluating}
+                                />
+                            </div>
+                            <Button onClick={handleEvaluatePunchline} disabled={isEvaluating || !punchline} className="w-full bg-accent hover:bg-accent/90">
+                                {isEvaluating ? <Loader2 className="animate-spin mr-2" /> : null}
+                                Évaluer ma Punchline
+                            </Button>
+
+                            {quizResult && (
+                                <Card className="bg-primary/5 border-primary/20">
+                                    <CardHeader>
+                                        <CardTitle className="font-headline text-xl text-primary flex items-center justify-between">
+                                            Résultat
+                                            <Badge variant="default" className="text-lg">{quizResult.score}/10</Badge>
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-foreground/90 whitespace-pre-wrap">{quizResult.feedback}</p>
+                                        <Button onClick={handleNewChallenge} disabled={isGeneratingChallenge} variant="link" className="mt-2 px-0">
+                                            Prochain défi <ChevronRight className="ml-1" />
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </div>
+                    )}
                 </div>
               </CardContent>
             </Card>
