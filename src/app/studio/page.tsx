@@ -32,6 +32,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import CreativeAssistantForm from "@/components/creative-assistant-form";
 import Logo from "@/components/logo";
@@ -53,7 +55,9 @@ import type { Creation } from "@/lib/types";
 type Ambiance = "Instrumental" | "Nature" | "Urbain" | null;
 
 export default function StudioPage() {
+  const [title, setTitle] = useState("");
   const [text, setText] = useState("");
+  const [slogan, setSlogan] = useState("");
   const [generatedContent, setGeneratedContent] = useState<string | null>(null);
   const [generatedGuidance, setGeneratedGuidance] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -73,11 +77,15 @@ export default function StudioPage() {
     } else {
       setArtistName(savedArtist);
       const creationId = searchParams.get('id');
+      const creationsKey = `plumeSonoreCreations_${savedArtist}`;
+      const creations: Creation[] = JSON.parse(localStorage.getItem(creationsKey) || '[]');
+      
       if (creationId) {
-        const creations: Creation[] = JSON.parse(localStorage.getItem(`plumeSonoreCreations_${savedArtist}`) || '[]');
         const creationToEdit = creations.find(c => c.id === parseInt(creationId));
         if (creationToEdit) {
+          setTitle(creationToEdit.title || "");
           setText(creationToEdit.content);
+          setSlogan(creationToEdit.slogan || "");
           setEditingId(creationToEdit.id);
         }
       }
@@ -169,20 +177,24 @@ export default function StudioPage() {
   };
   
   const handleSave = () => {
-    if (artistName && text.trim()) {
+    if (artistName && text.trim() && title.trim()) {
       const creationsKey = `plumeSonoreCreations_${artistName}`;
       const creations: Creation[] = JSON.parse(localStorage.getItem(creationsKey) || '[]');
       
       if (editingId !== null) {
         const index = creations.findIndex(c => c.id === editingId);
         if (index > -1) {
+          creations[index].title = title;
           creations[index].content = text;
+          creations[index].slogan = slogan;
           creations[index].date = new Date().toISOString();
         }
       } else {
          const newCreation: Creation = {
             id: Date.now(),
+            title,
             content: text,
+            slogan,
             date: new Date().toISOString(),
           };
           creations.unshift(newCreation);
@@ -197,19 +209,20 @@ export default function StudioPage() {
       router.push('/creations');
     } else {
          toast({
-            title: "Texte vide",
-            description: "Impossible de sauvegarder un texte vide.",
+            title: "Champs requis manquants",
+            description: "Le titre et le corps du texte ne peuvent pas être vides.",
             variant: "destructive",
         });
     }
   };
 
   const handleShare = async () => {
+    const shareText = `"${title}" par ${artistName}\n\n${text}${slogan ? `\n\n- ${slogan}` : ''}`;
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Ma création Plume Sonore',
-          text: text,
+          title: `"${title}" par ${artistName}`,
+          text: shareText,
         });
         toast({ title: 'Partagé !', description: 'Votre texte a été partagé avec succès.' });
       } catch (error) {
@@ -217,7 +230,8 @@ export default function StudioPage() {
         toast({ title: 'Erreur de partage', description: 'Le partage a été annulé ou a échoué.', variant: 'destructive' });
       }
     } else {
-      toast({ title: 'Partage non supporté', description: 'Votre navigateur ne supporte pas le partage natif. Copiez le texte manuellement.', variant: 'destructive' });
+       navigator.clipboard.writeText(shareText);
+       toast({ title: 'Copié !', description: 'Votre navigateur ne supporte pas le partage natif. Le texte a été copié dans le presse-papiers.' });
     }
   };
 
@@ -332,27 +346,41 @@ export default function StudioPage() {
                 </CardTitle>
                 <CardDescription>{editingId ? "Modifiez votre oeuvre." : "Écrivez librement vos inspirations, poésies, et punchlines."}</CardDescription>
               </CardHeader>
-              <CardContent className="flex-grow">
-                <div className="relative">
-                  <Textarea
-                    placeholder="Commencez à écrire ici..."
-                    className="min-h-[300px] text-base p-4 rounded-lg focus:ring-2 ring-primary/50"
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                  />
-                  <div className="absolute top-3 right-3 flex items-center gap-2">
-                     <Button variant="ghost" size="icon" onClick={handleMicClick} className={isListening ? 'bg-accent/20 text-accent' : ''}>
-                      <Mic className="h-5 w-5" />
-                      <span className="sr-only">Dicter du texte</span>
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={handleSave}>
-                      <Save className="h-5 w-5" />
-                      <span className="sr-only">Sauvegarder</span>
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={handleShare}>
-                      <Share2 className="h-5 w-5" />
-                      <span className="sr-only">Partager</span>
-                    </Button>
+              <CardContent className="flex-grow space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title" className="font-headline">Titre</Label>
+                    <Input id="title" placeholder="Le titre de votre oeuvre" value={title} onChange={e => setTitle(e.target.value)} />
+                  </div>
+                   <div className="space-y-2">
+                    <Label htmlFor="slogan" className="font-headline">Slogan</Label>
+                    <Input id="slogan" placeholder="Votre phrase-clé (optionnel)" value={slogan} onChange={e => setSlogan(e.target.value)} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="content" className="font-headline">Corps du texte</Label>
+                  <div className="relative">
+                    <Textarea
+                      id="content"
+                      placeholder="Commencez à écrire ici..."
+                      className="min-h-[250px] text-base p-4 rounded-lg focus:ring-2 ring-primary/50"
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                    />
+                     <div className="absolute top-3 right-3 flex items-center gap-1">
+                       <Button variant="ghost" size="icon" onClick={handleMicClick} className={isListening ? 'bg-accent/20 text-accent' : ''}>
+                        <Mic className="h-5 w-5" />
+                        <span className="sr-only">Dicter du texte</span>
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={handleSave}>
+                        <Save className="h-5 w-5" />
+                        <span className="sr-only">Sauvegarder</span>
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={handleShare}>
+                        <Share2 className="h-5 w-5" />
+                        <span className="sr-only">Partager</span>
+                      </Button>
+                    </div>
                   </div>
                 </div>
                 {generatedContent && (

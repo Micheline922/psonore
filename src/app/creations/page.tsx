@@ -37,7 +37,26 @@ export default function CreationsPage() {
       router.replace("/");
     } else {
       setArtistName(savedArtist);
-      const savedCreations = JSON.parse(localStorage.getItem(`plumeSonoreCreations_${savedArtist}`) || '[]');
+      const creationsKey = `plumeSonoreCreations_${savedArtist}`;
+      const savedCreationsRaw = localStorage.getItem(creationsKey) || '[]';
+      let savedCreations: Creation[] = JSON.parse(savedCreationsRaw);
+
+      // Migration for old data structure
+      const needsMigration = savedCreations.some(c => typeof c.content === 'string' && !c.title);
+      if (needsMigration) {
+          savedCreations = savedCreations.map((c: any) => {
+              if (typeof c.content === 'string' && !c.title) {
+                  return {
+                      ...c,
+                      title: c.content.split(' ').slice(0, 5).join(' ') + '...',
+                      slogan: '',
+                  };
+              }
+              return c;
+          });
+          localStorage.setItem(creationsKey, JSON.stringify(savedCreations));
+      }
+
       setCreations(savedCreations);
       setIsLoading(false);
     }
@@ -54,14 +73,6 @@ export default function CreationsPage() {
       variant: "destructive"
     });
   };
-  
-  const getTitle = (content: string) => {
-    const words = content.split(' ');
-    if (words.length > 5) {
-      return words.slice(0, 5).join(' ') + '...';
-    }
-    return content || "Sans titre";
-  }
 
   if (isLoading) {
     return (
@@ -97,13 +108,14 @@ export default function CreationsPage() {
             {creations.map(creation => (
               <Card key={creation.id} className="flex flex-col">
                 <CardHeader>
-                  <CardTitle className="font-headline text-xl">{getTitle(creation.content)}</CardTitle>
+                  <CardTitle className="font-headline text-xl">{creation.title || "Sans titre"}</CardTitle>
                   <CardDescription>
                     {format(new Date(creation.date), "d MMMM yyyy 'à' HH:mm", { locale: fr })}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow">
-                   <p className="text-sm text-muted-foreground line-clamp-4">{creation.content}</p>
+                   <p className="text-sm text-muted-foreground line-clamp-3">{creation.content}</p>
+                   {creation.slogan && <p className="text-sm italic text-primary/80 mt-2 line-clamp-2">"{creation.slogan}"</p>}
                 </CardContent>
                 <CardFooter className="flex justify-end gap-2">
                    <Button variant="outline" size="icon" asChild>
@@ -160,5 +172,3 @@ export default function CreationsPage() {
     </div>
   );
 }
-
-    
