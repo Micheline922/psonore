@@ -52,6 +52,7 @@ export default function LoginPage() {
     }
 
     localStorage.setItem("plumeSonoreArtist", artistName);
+    localStorage.setItem("plumeSonoreShowTutorial", "true"); // Flag for tutorial
     toast({
         title: `Bienvenue, ${artistName}!`,
         description: "Vous êtes maintenant connecté.",

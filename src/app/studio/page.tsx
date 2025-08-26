@@ -155,6 +155,7 @@ export default function StudioPage() {
   const searchParams = useSearchParams();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [proverb, setProverb] = useState("");
+  const [showTutorial, setShowTutorial] = useState(false);
 
   // State for Punchline Quiz
   const [challengeWords, setChallengeWords] = useState<string[]>([]);
@@ -194,6 +195,13 @@ export default function StudioPage() {
       router.replace("/");
     } else {
       setArtistName(savedArtist);
+
+      const shouldShowTutorial = localStorage.getItem("plumeSonoreShowTutorial") === "true";
+        if (shouldShowTutorial) {
+            setShowTutorial(true);
+            localStorage.removeItem("plumeSonoreShowTutorial");
+        }
+
       const creationId = searchParams.get('id');
       const creationsKey = `plumeSonoreCreations_${savedArtist}`;
       const creations: Creation[] = JSON.parse(localStorage.getItem(creationsKey) || '[]');
@@ -488,6 +496,59 @@ export default function StudioPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8">
+
+        <Dialog open={showTutorial} onOpenChange={setShowTutorial}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                <DialogTitle className="font-headline text-2xl text-primary flex items-center gap-2">
+                    <Wand2 /> Bienvenue sur Plume Sonore !
+                </DialogTitle>
+                <DialogDescription>
+                    Voici un petit tour d'horizon des fonctionnalités clés pour bien démarrer.
+                </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-2 text-sm">
+                    <div className="flex items-start gap-3">
+                        <BookText className="text-accent h-5 w-5 mt-1 shrink-0"/>
+                        <div>
+                            <h3 className="font-semibold">Bloc-notes Créatif</h3>
+                            <p className="text-muted-foreground">Votre espace principal pour écrire vos textes. Sauvegardez vos créations pour les retrouver plus tard.</p>
+                        </div>
+                    </div>
+                     <div className="flex items-start gap-3">
+                        <BrainCircuit className="text-accent h-5 w-5 mt-1 shrink-0"/>
+                        <div>
+                            <h3 className="font-semibold">Assistant & Inspiration</h3>
+                            <p className="text-muted-foreground">En manque d'idées ? Utilisez l'IA pour générer des vers, relevez les défis punchline ou consultez le dictionnaire créatif.</p>
+                        </div>
+                    </div>
+                     <div className="flex items-start gap-3">
+                        <Mic className="text-accent h-5 w-5 mt-1 shrink-0"/>
+                        <div>
+                            <h3 className="font-semibold">Scène Virtuelle</h3>
+                            <p className="text-muted-foreground">Entraînez-vous à réciter vos textes. Le coach vocal IA vous donnera un score et des conseils pour vous améliorer.</p>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                        <GraduationCap className="text-accent h-5 w-5 mt-1 shrink-0"/>
+                        <div>
+                            <h3 className="font-semibold">Académie</h3>
+                            <p className="text-muted-foreground">Approfondissez vos connaissances en art d'écriture avec notre tuteur IA, Maestro Plume.</p>
+                        </div>
+                    </div>
+                     <div className="flex items-start gap-3">
+                        <Users className="text-accent h-5 w-5 mt-1 shrink-0"/>
+                        <div>
+                            <h3 className="font-semibold">Communauté</h3>
+                            <p className="text-muted-foreground">Partagez vos créations et interagissez avec une communauté de poètes et d'artistes virtuels.</p>
+                        </div>
+                    </div>
+                </div>
+                 <Button onClick={() => setShowTutorial(false)} className="mt-4 w-full">C'est parti !</Button>
+            </DialogContent>
+        </Dialog>
+
+
       <main className="max-w-7xl mx-auto space-y-8">
         <header className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
