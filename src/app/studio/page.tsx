@@ -22,6 +22,8 @@ import {
   RefreshCw,
   Star,
   Flame,
+  BookMarked,
+  Search,
 } from "lucide-react";
 import { generateCreativeText } from "@/ai/flows/creative-ai-assistant";
 import {
@@ -30,6 +32,7 @@ import {
     type EvaluatePunchlineInput,
 } from "@/ai/flows/punchline-quiz-flow";
 import { evaluatePerformance, type EvaluatePerformanceInput, type EvaluatePerformanceOutput } from "@/ai/flows/evaluate-performance-flow";
+import { getDefinition, type DictionaryInput, type DictionaryOutput } from "@/ai/flows/dictionary-flow";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -158,6 +161,11 @@ export default function StudioPage() {
   const [performanceText, setPerformanceText] = useState("");
   const recognitionRef = useRef<any>(null);
   const [performanceHistory, setPerformanceHistory] = useState<{ score: number }[]>([]);
+
+  // State for Dictionary
+  const [dictionaryWord, setDictionaryWord] = useState("");
+  const [dictionaryResult, setDictionaryResult] = useState<DictionaryOutput | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     setProverb(proverbs[Math.floor(Math.random() * proverbs.length)]);
@@ -438,6 +446,28 @@ export default function StudioPage() {
       setIsEvaluating(false);
     }
   };
+
+  const handleDictionarySearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (dictionaryWord.trim().length === 0) return;
+    setIsSearching(true);
+    setDictionaryResult(null);
+    try {
+      const result = await getDefinition({ word: dictionaryWord });
+      if (!result.definition) {
+        toast({ title: "Mot non trouvé", description: `Le mot "${dictionaryWord}" n'a pas pu être trouvé.`, variant: "destructive" });
+        setDictionaryResult(null);
+      } else {
+        setDictionaryResult(result);
+      }
+    } catch (error) {
+      console.error("Error with dictionary AI:", error);
+      toast({ title: "Erreur du dictionnaire", description: "La recherche a échoué. Veuillez réessayer.", variant: "destructive" });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   
   if (!artistName) {
     return (
@@ -563,6 +593,58 @@ export default function StudioPage() {
                 </Button>
             </CardFooter>
             </Card>
+            
+             <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline text-2xl flex items-center gap-2">
+                        <BookMarked className="text-accent"/>
+                        Dictionnaire Créatif
+                    </CardTitle>
+                    <CardDescription>Trouvez la définition, les synonymes et antonymes d'un mot.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <form onSubmit={handleDictionarySearch} className="flex items-center gap-2">
+                        <Input 
+                            placeholder="Rechercher un mot..."
+                            value={dictionaryWord}
+                            onChange={e => setDictionaryWord(e.target.value)}
+                            disabled={isSearching}
+                        />
+                        <Button type="submit" size="icon" disabled={isSearching}>
+                            {isSearching ? <Loader2 className="animate-spin" /> : <Search />}
+                            <span className="sr-only">Rechercher</span>
+                        </Button>
+                    </form>
+                    {isSearching && (
+                        <div className="flex items-center justify-center p-4">
+                            <Loader2 className="animate-spin text-primary" />
+                        </div>
+                    )}
+                    {dictionaryResult && (
+                        <div className="space-y-4 pt-2">
+                            <h3 className="font-headline text-xl text-primary">{dictionaryResult.definition}</h3>
+                            
+                            {dictionaryResult.synonyms.length > 0 && (
+                                <div>
+                                    <h4 className="font-semibold mb-1">Synonymes</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {dictionaryResult.synonyms.map(s => <Badge key={s} variant="secondary">{s}</Badge>)}
+                                    </div>
+                                </div>
+                            )}
+
+                            {dictionaryResult.antonyms.length > 0 && (
+                                <div>
+                                    <h4 className="font-semibold mb-1">Antonymes</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {dictionaryResult.antonyms.map(a => <Badge key={a} variant="outline">{a}</Badge>)}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </CardContent>
+             </Card>
           </div>
 
           <aside className="space-y-8">
