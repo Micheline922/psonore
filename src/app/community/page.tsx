@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, MessageCircle, MessageSquarePlus, PlusCircle } from "lucide-react";
+import { ArrowLeft, MessageCircle, MessageSquarePlus, PlusCircle, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/logo";
@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { generateCommunityFeedback } from "@/ai/flows/generate-community-feedback-flow";
 
 // Mock Data
 const initialPosts = [
@@ -133,6 +134,7 @@ export default function CommunityPage() {
   const [posts, setPosts] = useState(initialPosts);
   const [newPostContent, setNewPostContent] = useState("");
   const [isPostDialogOpen, setIsPostDialogOpen] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -155,7 +157,7 @@ export default function CommunityPage() {
     setPosts(posts.map(p => p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p));
   };
   
-  const handlePublishPost = () => {
+  const handlePublishPost = async () => {
     if (newPostContent.trim().length < 10) {
         toast({
             title: "Publication trop courte",
@@ -166,6 +168,7 @@ export default function CommunityPage() {
     }
 
     if(!artistName) return;
+    setIsPublishing(true);
 
     const newPost = {
         id: Date.now(),
@@ -180,10 +183,41 @@ export default function CommunityPage() {
     setPosts([newPost, ...posts]);
     setNewPostContent("");
     setIsPostDialogOpen(false);
+    
     toast({
         title: "Publié !",
-        description: "Votre création a été partagée avec la communauté."
+        description: "Votre création a été partagée. L'IA génère des réactions..."
     });
+
+    try {
+      const communityArtists = initialPosts.map(p => p.author).filter(name => name !== artistName);
+      const feedback = await generateCommunityFeedback({
+        postContent: newPost.content,
+        postAuthor: newPost.author,
+        communityArtists: [...new Set(communityArtists)], // Remove duplicates
+      });
+      
+      const generatedComments = feedback.comments.map(c => ({...c, id: Date.now() + Math.random()}));
+
+      setPosts(currentPosts => currentPosts.map(p => 
+        p.id === newPost.id ? { ...p, comments: generatedComments } : p
+      ));
+      
+      toast({
+          title: "Nouvelles réactions !",
+          description: "La communauté a réagi à votre publication."
+      });
+
+    } catch (error) {
+        console.error("Error generating community feedback:", error);
+        toast({
+            title: "Erreur de l'IA",
+            description: "Impossible de générer les réactions de la communauté.",
+            variant: "destructive"
+        });
+    } finally {
+        setIsPublishing(false);
+    }
   }
 
   if (!artistName) {
@@ -235,11 +269,14 @@ export default function CommunityPage() {
                                     value={newPostContent}
                                     onChange={e => setNewPostContent(e.target.value)}
                                     className="min-h-32"
+                                    disabled={isPublishing}
                                  />
                             </div>
                         </div>
                         <DialogFooter>
-                        <Button onClick={handlePublishPost} className="bg-accent hover:bg-accent/90">Publier</Button>
+                        <Button onClick={handlePublishPost} className="bg-accent hover:bg-accent/90" disabled={isPublishing}>
+                            {isPublishing ? <Loader2 className="animate-spin" /> : "Publier"}
+                        </Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
