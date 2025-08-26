@@ -10,16 +10,13 @@ import {
   Lightbulb,
   LogOut,
   Mic,
-  Music,
   Save,
   Share2,
   Users,
-  Volume2,
-  Wind,
-  Zap,
   GraduationCap,
   FolderKanban,
   HelpCircle,
+  Wand2,
 } from "lucide-react";
 import { generateCreativeText, GenerateCreativeTextOutput } from "@/ai/flows/creative-ai-assistant";
 import { Button } from "@/components/ui/button";
@@ -52,8 +49,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import type { Creation } from "@/lib/types";
 
-type Ambiance = "Instrumental" | "Nature" | "Urbain" | null;
-
 const proverbs = [
   "Là où le coeur est, les pieds n'hésitent pas à y aller.",
   "L'art de l'écriture est de peindre avec des mots.",
@@ -73,8 +68,6 @@ export default function StudioPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   const [isListening, setIsListening] = useState(false);
-  const [activeAmbiance, setActiveAmbiance] = useState<Ambiance>(null);
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const [artistName, setArtistName] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -106,15 +99,6 @@ export default function StudioPage() {
       }
     }
   }, [router, searchParams]);
-
-  useEffect(() => {
-    return () => {
-      if (audio) {
-        audio.pause();
-        setAudio(null);
-      }
-    };
-  }, [audio]);
 
   useEffect(() => {
     // @ts-ignore
@@ -250,32 +234,6 @@ export default function StudioPage() {
     }
   };
 
-  const handleAmbianceClick = (ambiance: Ambiance) => {
-    if (audio) {
-      audio.pause();
-    }
-
-    if (activeAmbiance === ambiance) {
-      setActiveAmbiance(null);
-      setAudio(null);
-      return;
-    }
-
-    setActiveAmbiance(ambiance);
-    let soundFile = '';
-    if (ambiance === 'Instrumental') soundFile = 'https://storage.googleapis.com/fweb-sounds-priority/instrumental_ambiance.mp3';
-    if (ambiance === 'Nature') soundFile = 'https://storage.googleapis.com/fweb-sounds-priority/nature_ambiance.mp3';
-    if (ambiance === 'Urbain') soundFile = 'https://storage.googleapis.com/fweb-sounds-priority/urban_ambiance.mp3';
-
-    if(soundFile){
-      const newAudio = new Audio(soundFile);
-      newAudio.loop = true;
-      newAudio.play();
-      setAudio(newAudio);
-      toast({ title: `Ambiance ${ambiance}`, description: "L'ambiance sonore a commencé." });
-    }
-  };
-
   const handleVirtualMic = () => {
     if ('speechSynthesis' in window) {
       if (speechSynthesis.speaking) {
@@ -402,7 +360,7 @@ export default function StudioPage() {
                    <Card className="mt-4 bg-primary/5 border-primary/20">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 font-headline text-xl text-primary">
-                        <Zap size={20} className="text-primary"/> Suggestion de l'IA
+                        <Wand2 size={20} className="text-primary"/> Suggestion de l'IA
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -456,7 +414,7 @@ export default function StudioPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
+                 <div>
                     <h3 className="font-headline text-lg mb-2">Proverbe du Jour</h3>
                     <blockquote className="border-l-4 border-accent pl-4 italic text-muted-foreground">
                         {proverb ? `"${proverb}"` : "..."}
@@ -464,12 +422,13 @@ export default function StudioPage() {
                 </div>
                 <Separator />
                 <div>
-                    <h3 className="font-headline text-lg mb-2">Ambiances sonores</h3>
-                    <div className="flex flex-wrap gap-2">
-                        <Button variant={activeAmbiance === 'Instrumental' ? 'default' : 'outline'} size="sm" onClick={() => handleAmbianceClick('Instrumental')}><Music size={16} className="mr-2"/>Instrumental</Button>
-                        <Button variant={activeAmbiance === 'Nature' ? 'default' : 'outline'} size="sm" onClick={() => handleAmbianceClick('Nature')}><Wind size={16} className="mr-2"/>Nature</Button>
-                        <Button variant={activeAmbiance === 'Urbain' ? 'default' : 'outline'} size="sm" onClick={() => handleAmbianceClick('Urbain')}><Volume2 size={16} className="mr-2"/>Urbain</Button>
-                    </div>
+                    <h3 className="font-headline text-lg mb-2">Créer une Punchline</h3>
+                    <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                        <li><span className="font-semibold text-foreground/80">Soyez bref et percutant :</span> Allez droit au but.</li>
+                        <li><span className="font-semibold text-foreground/80">Utilisez des figures de style :</span> Métaphores, comparaisons, assonances.</li>
+                        <li><span className="font-semibold text-foreground/80">Créez la surprise :</span> Terminez par une chute inattendue.</li>
+                        <li><span className="font-semibold text-foreground/80">Jouez sur les mots :</span> Les doubles sens sont très efficaces.</li>
+                    </ul>
                 </div>
               </CardContent>
             </Card>
