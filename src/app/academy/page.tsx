@@ -63,12 +63,6 @@ const advancedLessons = [
     { week: "Semaine 29-30: Le Projet Artistique", title: "Construire un recueil ou un spectacle", content: "Comment passer de plusieurs textes à un projet cohérent ? On aborde la thématique, le fil rouge, l'organisation des textes pour créer une oeuvre complète et aboutie. Le voyage artistique est sans fin." }
 ];
 
-const artHistoryLessons = [
-    { week: "Le Romantisme", title: "L'expression du moi et des passions", content: "Au début du 19e siècle, des artistes comme Victor Hugo en littérature ou Delacroix en peinture ont mis l'accent sur l'émotion, le rêve, la nature et la liberté individuelle. Comment utiliser cette intensité pour nourrir vos propres textes sur l'amour, la solitude ou la révolte ?" },
-    { week: "Le Surréalisme", title: "Explorer l'inconscient et le rêve", content: "Avec des figures comme André Breton et Salvador Dalí, ce mouvement du 20e siècle a cherché à libérer la création des contraintes de la logique. L'écriture automatique, les associations d'idées inattendues... et si vous laissiez votre inconscient écrire la prochaine punchline ?" },
-    { week: "La Renaissance", title: "L'humain au centre de tout", content: "Période de grands bouleversements (15e-16e siècles), la Renaissance a célébré le génie humain avec des artistes comme Léonard de Vinci et des poètes comme Ronsard. Comment la quête d'harmonie, de beauté et de connaissance peut-elle inspirer une écriture qui célèbre la complexité de l'être humain ?" }
-];
-
 
 const renderLessons = (lessons: { week: string; title: string; content: string; }[]) => {
     return (
@@ -228,11 +222,10 @@ export default function AcademyPage() {
       <main className="max-w-6xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
             <Tabs defaultValue="beginner">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="beginner"><PenLine className="mr-2" />Débutant</TabsTrigger>
                     <TabsTrigger value="intermediate"><BrainCircuit className="mr-2"/>Intermédiaire</TabsTrigger>
                     <TabsTrigger value="advanced"><BookOpen className="mr-2"/>Évolué</TabsTrigger>
-                    <TabsTrigger value="art-history"><History className="mr-2"/>Histoire de l'Art</TabsTrigger>
                     <TabsTrigger value="quiz"><Radio className="mr-2"/>Quiz Interactif</TabsTrigger>
                 </TabsList>
                 <TabsContent value="beginner">
@@ -265,17 +258,6 @@ export default function AcademyPage() {
                         </CardHeader>
                         <CardContent>
                             {renderLessons(advancedLessons)}
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-                 <TabsContent value="art-history">
-                     <Card>
-                        <CardHeader>
-                            <CardTitle className="font-headline text-2xl">Histoire de l'Art</CardTitle>
-                            <CardDescription>Trouvez l'inspiration dans les grands mouvements artistiques.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {renderLessons(artHistoryLessons)}
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -414,6 +396,5 @@ export default function AcademyPage() {
     </div>
   );
 }
-
 
     
