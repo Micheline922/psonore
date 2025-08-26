@@ -30,20 +30,34 @@ import Logo from "@/components/logo";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+type Ambiance = "Instrumental" | "Nature" | "Urbain" | null;
+
 export default function Home() {
   const [text, setText] = useState("");
   const [generatedContent, setGeneratedContent] = useState<GenerateCreativeTextOutput | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   const [isListening, setIsListening] = useState(false);
-  
+  const [activeAmbiance, setActiveAmbiance] = useState<Ambiance>(null);
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+
   useEffect(() => {
     const savedText = localStorage.getItem("plumeSonoreText");
     if (savedText) {
       setText(savedText);
     }
   }, []);
-  
+
+  useEffect(() => {
+    // Cleanup audio on component unmount
+    return () => {
+      if (audio) {
+        audio.pause();
+        setAudio(null);
+      }
+    };
+  }, [audio]);
+
   // Placeholder for speech recognition
   useEffect(() => {
     // @ts-ignore
@@ -121,6 +135,72 @@ export default function Home() {
     });
   };
 
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Ma création Plume Sonore',
+          text: text,
+        });
+        toast({ title: 'Partagé !', description: 'Votre texte a été partagé avec succès.' });
+      } catch (error) {
+        console.error('Error sharing:', error);
+        toast({ title: 'Erreur de partage', description: 'Le partage a été annulé ou a échoué.', variant: 'destructive' });
+      }
+    } else {
+      toast({ title: 'Partage non supporté', description: 'Votre navigateur ne supporte pas le partage natif. Copiez le texte manuellement.', variant: 'destructive' });
+    }
+  };
+
+  const handleAmbianceClick = (ambiance: Ambiance) => {
+    if (audio) {
+      audio.pause();
+    }
+
+    if (activeAmbiance === ambiance) {
+      setActiveAmbiance(null);
+      setAudio(null);
+      return;
+    }
+
+    setActiveAmbiance(ambiance);
+    let soundFile = '';
+    if (ambiance === 'Instrumental') soundFile = 'https://storage.googleapis.com/fweb-sounds-priority/instrumental_ambiance.mp3';
+    if (ambiance === 'Nature') soundFile = 'https://storage.googleapis.com/fweb-sounds-priority/nature_ambiance.mp3';
+    if (ambiance === 'Urbain') soundFile = 'https://storage.googleapis.com/fweb-sounds-priority/urban_ambiance.mp3';
+
+    if(soundFile){
+      const newAudio = new Audio(soundFile);
+      newAudio.loop = true;
+      newAudio.play();
+      setAudio(newAudio);
+      toast({ title: `Ambiance ${ambiance}`, description: "L'ambiance sonore a commencé." });
+    }
+  };
+
+  const handleVirtualMic = () => {
+    if ('speechSynthesis' in window) {
+      if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+        toast({ title: 'Lecture arrêtée' });
+        return;
+      }
+      if (text.trim().length === 0) {
+        toast({ title: 'Texte vide', description: 'Veuillez écrire quelque chose avant de lancer le micro.', variant: 'destructive'});
+        return;
+      }
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'fr-FR';
+      utterance.onend = () => {
+        toast({ title: 'Lecture terminée' });
+      };
+      speechSynthesis.speak(utterance);
+      toast({ title: 'Lecture en cours...' });
+    } else {
+      toast({ title: 'Fonctionnalité non supportée', description: 'La synthèse vocale n\'est pas supportée par votre navigateur.', variant: 'destructive'});
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8">
       <main className="max-w-7xl mx-auto space-y-8">
@@ -159,7 +239,7 @@ export default function Home() {
                       <Save className="h-5 w-5" />
                       <span className="sr-only">Sauvegarder</span>
                     </Button>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" onClick={handleShare}>
                       <Share2 className="h-5 w-5" />
                       <span className="sr-only">Partager</span>
                     </Button>
@@ -213,9 +293,9 @@ export default function Home() {
                 <div>
                     <h3 className="font-headline text-lg mb-2">Ambiances sonores</h3>
                     <div className="flex flex-wrap gap-2">
-                        <Button variant="outline" size="sm"><Music size={16} className="mr-2"/>Instrumental</Button>
-                        <Button variant="outline" size="sm"><Wind size={16} className="mr-2"/>Nature</Button>
-                        <Button variant="outline" size="sm"><Volume2 size={16} className="mr-2"/>Urbain</Button>
+                        <Button variant={activeAmbiance === 'Instrumental' ? 'default' : 'outline'} size="sm" onClick={() => handleAmbianceClick('Instrumental')}><Music size={16} className="mr-2"/>Instrumental</Button>
+                        <Button variant={activeAmbiance === 'Nature' ? 'default' : 'outline'} size="sm" onClick={() => handleAmbianceClick('Nature')}><Wind size={16} className="mr-2"/>Nature</Button>
+                        <Button variant={activeAmbiance === 'Urbain' ? 'default' : 'outline'} size="sm" onClick={() => handleAmbianceClick('Urbain')}><Volume2 size={16} className="mr-2"/>Urbain</Button>
                     </div>
                 </div>
               </CardContent>
@@ -231,7 +311,7 @@ export default function Home() {
               </CardHeader>
               <CardContent className="text-center">
                  <p className="text-muted-foreground mb-4">Prêt à monter sur scène ?</p>
-                <Button className="w-full" variant="secondary">
+                <Button className="w-full" variant="secondary" onClick={handleVirtualMic}>
                     <Mic size={16} className="mr-2"/>Lancer le micro virtuel
                 </Button>
               </CardContent>
@@ -259,7 +339,7 @@ export default function Home() {
                           <AvatarImage src="https://picsum.photos/100/100?random=3" data-ai-hint="writer photo" />
                           <AvatarFallback>A3</AvatarFallback>
                       </Avatar>
-                       <Button variant="link" className="pl-2 text-primary">Voir plus</Button>
+                       <Button variant="link" className="pl-2 text-primary" onClick={() => toast({title: "Bientôt disponible!", description: "La section communauté est en cours de construction."})}>Voir plus</Button>
                   </div>
                 </CardContent>
             </Card>
