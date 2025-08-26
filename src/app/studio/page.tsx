@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -19,6 +19,8 @@ import {
   Wand2,
   Loader2,
   ChevronRight,
+  RefreshCw,
+  Star,
 } from "lucide-react";
 import { generateCreativeText } from "@/ai/flows/creative-ai-assistant";
 import {
@@ -27,6 +29,7 @@ import {
     EvaluatePunchlineInput,
     EvaluatePunchlineOutput,
 } from "@/ai/flows/punchline-quiz-flow";
+import { evaluatePerformance, EvaluatePerformanceInput, EvaluatePerformanceOutput } from "@/ai/flows/evaluate-performance-flow";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -57,6 +60,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import type { Creation } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
 const proverbs = [
   "Là où le coeur est, les pieds n'hésitent pas à y aller.",
@@ -76,7 +80,7 @@ export default function StudioPage() {
   const [generatedGuidance, setGeneratedGuidance] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
-  const [isListening, setIsListening] = useState(false);
+  const [isDictating, setIsDictating] = useState(false);
   const [artistName, setArtistName] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -89,7 +93,12 @@ export default function StudioPage() {
   const [quizResult, setQuizResult] = useState<EvaluatePunchlineOutput | null>(null);
   const [isGeneratingChallenge, setIsGeneratingChallenge] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
-
+  
+  // State for Virtual Stage
+  const [isRecording, setIsRecording] = useState(false);
+  const [isEvaluatingPerformance, setIsEvaluatingPerformance] = useState(false);
+  const [performanceResult, setPerformanceResult] = useState<EvaluatePerformanceOutput | null>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     setProverb(proverbs[Math.floor(Math.random() * proverbs.length)]);
@@ -124,6 +133,7 @@ export default function StudioPage() {
       console.warn("Speech recognition not supported in this browser.");
       return;
     }
+
     const recognition = new SpeechRecognition();
     recognition.lang = 'fr-FR';
     recognition.interimResults = false;
@@ -131,32 +141,45 @@ export default function StudioPage() {
 
     recognition.onresult = (event: any) => {
       const speechResult = event.results[0][0].transcript;
-      setText(prev => prev ? `${prev} ${speechResult}`: speechResult);
+      if (isDictating) {
+        setText(prev => prev ? `${prev} ${speechResult}` : speechResult);
+      }
+      if (isRecording) {
+        handlePerformanceEvaluation(speechResult);
+      }
     };
 
     recognition.onspeechend = () => {
-      recognition.stop();
-      setIsListening(false);
+      if (isDictating) {
+          recognition.stop();
+          setIsDictating(false);
+      }
+       if (isRecording) {
+          recognition.stop();
+          setIsRecording(false);
+      }
     };
 
     recognition.onerror = (event: any) => {
       console.error("Speech recognition error", event.error);
+      let errorMessage = "La reconnaissance vocale a échoué. Veuillez réessayer.";
+       if (event.error === 'no-speech') {
+        errorMessage = "Aucun son n'a été détecté. Assurez-vous que votre micro est activé.";
+      } else if (event.error === 'not-allowed') {
+        errorMessage = "L'accès au micro a été refusé. Veuillez autoriser l'accès dans les paramètres de votre navigateur.";
+      }
       toast({
-        title: "Erreur de dictée",
-        description: "La reconnaissance vocale a échoué. Veuillez réessayer.",
+        title: "Erreur de reconnaissance vocale",
+        description: errorMessage,
         variant: "destructive",
       });
-      setIsListening(false);
+      setIsDictating(false);
+      setIsRecording(false);
     };
+    
+    recognitionRef.current = recognition;
 
-    if (isListening) {
-      recognition.start();
-    }
-
-    return () => {
-      recognition.stop();
-    };
-  }, [isListening, toast]);
+  }, [isDictating, isRecording, toast]);
 
 
   const handleGenerate = async (values: { textFragment: string; style: string }) => {
@@ -184,11 +207,13 @@ export default function StudioPage() {
     }
   };
 
-  const handleMicClick = () => {
-    if (isListening) {
-      setIsListening(false);
+  const handleMicDictateClick = () => {
+    if (isDictating) {
+      recognitionRef.current?.stop();
+      setIsDictating(false);
     } else {
-      setIsListening(true);
+      setIsDictating(true);
+      recognitionRef.current?.start();
     }
   };
   
@@ -250,29 +275,41 @@ export default function StudioPage() {
        toast({ title: 'Copié !', description: 'Votre navigateur ne supporte pas le partage natif. Le texte a été copié dans le presse-papiers.' });
     }
   };
-
-  const handleVirtualMic = () => {
-    if ('speechSynthesis' in window) {
-      if (speechSynthesis.speaking) {
-        speechSynthesis.cancel();
-        toast({ title: 'Lecture arrêtée' });
-        return;
-      }
-      if (text.trim().length === 0) {
-        toast({ title: 'Texte vide', description: 'Veuillez écrire quelque chose avant de lancer le micro.', variant: 'destructive'});
-        return;
-      }
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'fr-FR';
-      utterance.onend = () => {
-        toast({ title: 'Lecture terminée' });
-      };
-      speechSynthesis.speak(utterance);
-      toast({ title: 'Lecture en cours...' });
+  
+  const handleVirtualMicRecord = () => {
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
     } else {
-      toast({ title: 'Fonctionnalité non supportée', description: 'La synthèse vocale n\'est pas supportée par votre navigateur.', variant: 'destructive'});
+        if(text.trim().length < 10) {
+             toast({ title: "Texte trop court", description: "Veuillez écrire au moins 10 caractères avant de vous enregistrer.", variant: "destructive" });
+             return;
+        }
+      setIsRecording(true);
+      setPerformanceResult(null);
+      recognitionRef.current?.start();
+       toast({ title: "Enregistrement en cours...", description: "Récitez votre texte. L'enregistrement s'arrêtera automatiquement." });
     }
+  }
+
+  const handlePerformanceEvaluation = async (transcript: string) => {
+      setIsEvaluatingPerformance(true);
+      try {
+          const input: EvaluatePerformanceInput = {
+              originalText: text,
+              userRecitation: transcript,
+          };
+          const result = await evaluatePerformance(input);
+          setPerformanceResult(result);
+          toast({ title: "Évaluation terminée !", description: "Le coach IA a analysé votre performance." });
+      } catch (error) {
+          console.error("Error evaluating performance:", error);
+          toast({ title: "Erreur de l'IA", description: "L'évaluation de la performance a échoué.", variant: "destructive" });
+      } finally {
+          setIsEvaluatingPerformance(false);
+      }
   };
+
 
   const handleLogout = () => {
     localStorage.removeItem("plumeSonoreArtist");
@@ -395,7 +432,7 @@ export default function StudioPage() {
                       onChange={(e) => setText(e.target.value)}
                     />
                      <div className="absolute top-3 right-3 flex items-center gap-1">
-                       <Button variant="ghost" size="icon" onClick={handleMicClick} className={isListening ? 'bg-accent/20 text-accent' : ''}>
+                       <Button variant="ghost" size="icon" onClick={handleMicDictateClick} className={isDictating ? 'bg-accent/20 text-accent' : ''}>
                         <Mic className="h-5 w-5" />
                         <span className="sr-only">Dicter du texte</span>
                       </Button>
@@ -543,13 +580,42 @@ export default function StudioPage() {
                   <Mic className="text-accent" />
                   Scène Virtuelle
                 </CardTitle>
-                 <CardDescription>Entraînez-vous à réciter vos textes.</CardDescription>
+                 <CardDescription>Entraînez-vous et recevez un feedback de l'IA.</CardDescription>
               </CardHeader>
-              <CardContent className="text-center">
-                 <p className="text-muted-foreground mb-4">Votre texte du bloc-notes sera lu ici.</p>
-                <Button className="w-full" variant="secondary" onClick={handleVirtualMic}>
-                    <Mic size={16} className="mr-2"/>Lancer le micro virtuel
+              <CardContent className="space-y-4">
+                <Button className="w-full" variant={isRecording ? "destructive" : "secondary"} onClick={handleVirtualMicRecord} disabled={isEvaluatingPerformance}>
+                    {isRecording && <div className="mr-2 h-2 w-2 rounded-full bg-white animate-pulse"></div>}
+                    {isRecording ? "Arrêter l'enregistrement" : <><Mic size={16} className="mr-2"/>Lancer le coach vocal</>}
                 </Button>
+
+                 {(isEvaluatingPerformance || performanceResult) && (
+                    <div className="space-y-4 pt-4">
+                         <Separator />
+                         {isEvaluatingPerformance && (
+                            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                                <Loader2 className="animate-spin" />
+                                <p>Analyse de votre performance...</p>
+                            </div>
+                         )}
+                         {performanceResult && (
+                            <div>
+                                <h3 className="font-headline text-lg mb-2">Analyse du Coach IA</h3>
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="font-bold">Score Global</span>
+                                    <Badge className="text-lg">{performanceResult.score}/10</Badge>
+                                </div>
+                                <Progress value={performanceResult.score * 10} className="h-2 mb-4" />
+                                
+                                <h4 className="font-semibold flex items-center gap-2 mb-1"><Star size={16} className="text-primary"/>Points forts :</h4>
+                                <p className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap">{performanceResult.positives}</p>
+
+                                <h4 className="font-semibold flex items-center gap-2 mb-1"><RefreshCw size={16} className="text-accent"/>Axes d'amélioration :</h4>
+                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{performanceResult.improvements}</p>
+                            </div>
+                         )}
+                    </div>
+                 )}
+
               </CardContent>
             </Card>
 
