@@ -359,8 +359,12 @@ export default function StudioPage() {
         });
         toast({ title: 'Partagé !', description: 'Votre texte a été partagé avec succès.' });
       } catch (error) {
+        // Ignore AbortError which occurs when the user cancels the share sheet
+        if ((error as Error).name === 'AbortError') {
+            return;
+        }
         console.error('Error sharing:', error);
-        toast({ title: 'Erreur de partage', description: 'Le partage a été annulé ou a échoué.', variant: 'destructive' });
+        toast({ title: 'Erreur de partage', description: 'Le partage a échoué.', variant: 'destructive' });
       }
     } else {
        navigator.clipboard.writeText(shareText);
