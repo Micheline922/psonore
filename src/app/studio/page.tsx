@@ -359,8 +359,8 @@ export default function StudioPage() {
         });
         toast({ title: 'Partagé !', description: 'Votre texte a été partagé avec succès.' });
       } catch (error) {
-        // Ignore AbortError which occurs when the user cancels the share sheet
-        if ((error as Error).name === 'AbortError') {
+        // Ignore AbortError & NotAllowedError which occurs when the user cancels the share sheet or permission is denied
+        if ((error as Error).name === 'AbortError' || (error as Error).name === 'NotAllowedError') {
             return;
         }
         console.error('Error sharing:', error);
