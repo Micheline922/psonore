@@ -139,7 +139,7 @@ export default function AcademyPage() {
             </AccordionItem>
         ))}
     </Accordion>
-  )
+  );
 
   const beginnerLessons = [
     { title: "Semaine 1: Les Bases de la Rime", content: "La rime est la répétition d'un même son. On distingue les rimes pauvres (1 son commun, ex: pas/chocolat), suffisantes (2 sons, ex: parole/folle), et riches (3 sons+, ex: image/sage). La disposition (AABB, ABAB, ABBA) crée le schéma de rimes." },
@@ -367,3 +367,5 @@ export default function AcademyPage() {
     </div>
   );
 }
+
+    
