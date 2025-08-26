@@ -110,7 +110,7 @@ const proverbs = [
 const tongueTwisters = [
     { name: "Classique", text: "Les chaussettes de l'archiduchesse sont-elles sèches, archi-sèches ?" },
     { name: "Poétique", text: "Un chasseur sachant chasser doit savoir chasser sans son chien." },
-    { name: "Rapide", text: "Piano, panier, panier, piano." },
+    { name: "Piano", text: "Piano, panier, panier, piano." },
     { name: "Complexe", text: "Je veux et j'exige d'exquises excuses." },
     { name: "Sibilant", text: "Si six scies scient six cyprès, six cents scies scient six cents cyprès." },
     { name: "Animaux", text: "Trois tortues trottaient sur un trottoir très étroit." },
@@ -884,8 +884,8 @@ export default function StudioPage() {
                                         <SelectValue placeholder="Sélectionnez un virelangue..."/>
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {tongueTwisters.map(t => (
-                                            <SelectItem key={t.name} value={t.text}>{t.name}</SelectItem>
+                                        {tongueTwisters.map((t, index) => (
+                                            <SelectItem key={`${t.name}-${index}`} value={t.text}>{t.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -1020,3 +1020,5 @@ export default function StudioPage() {
     </div>
   );
 }
+
+    
