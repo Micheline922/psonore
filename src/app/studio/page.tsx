@@ -27,7 +27,6 @@ import {
     generateQuizChallenge,
     evaluatePunchline,
     type EvaluatePunchlineInput,
-    type EvaluatePunchlineOutput,
 } from "@/ai/flows/punchline-quiz-flow";
 import { evaluatePerformance, type EvaluatePerformanceInput, type EvaluatePerformanceOutput } from "@/ai/flows/evaluate-performance-flow";
 import { Button } from "@/components/ui/button";
@@ -62,6 +61,12 @@ import type { Creation } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
+type QuizResult = {
+    score: number;
+    feedback: string;
+    examples?: string;
+}
+
 const proverbs = [
   "Là où le coeur est, les pieds n'hésitent pas à y aller.",
   "L'art de l'écriture est de peindre avec des mots.",
@@ -90,7 +95,7 @@ export default function StudioPage() {
   // State for Punchline Quiz
   const [challengeWords, setChallengeWords] = useState<string[]>([]);
   const [punchline, setPunchline] = useState("");
-  const [quizResult, setQuizResult] = useState<EvaluatePunchlineOutput | null>(null);
+  const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
   const [isGeneratingChallenge, setIsGeneratingChallenge] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   
@@ -348,7 +353,14 @@ export default function StudioPage() {
         userPunchline: punchline,
       };
       const result = await evaluatePunchline(input);
-      setQuizResult(result);
+      const [feedback, examples] = result.feedback.split("---EXEMPLES---");
+      
+      setQuizResult({
+          score: result.score,
+          feedback: feedback.trim(),
+          examples: examples ? examples.trim() : undefined,
+      });
+
     } catch (error) {
       console.error("Error evaluating punchline:", error);
       toast({ title: "Erreur de l'IA", description: "L'évaluation a échoué. Veuillez réessayer.", variant: "destructive" });
@@ -560,8 +572,15 @@ export default function StudioPage() {
                                             <Badge variant="default" className="text-lg">{quizResult.score}/10</Badge>
                                         </CardTitle>
                                     </CardHeader>
-                                    <CardContent>
+                                    <CardContent className="space-y-3">
                                         <p className="text-sm text-foreground/90 whitespace-pre-wrap">{quizResult.feedback}</p>
+                                        {quizResult.examples && (
+                                            <div>
+                                                <Separator className="my-2" />
+                                                <h4 className="font-semibold mb-1">Exemples :</h4>
+                                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{quizResult.examples}</p>
+                                            </div>
+                                        )}
                                         <Button onClick={handleNewChallenge} disabled={isGeneratingChallenge} variant="link" className="mt-2 px-0">
                                             Prochain défi <ChevronRight className="ml-1" />
                                         </Button>

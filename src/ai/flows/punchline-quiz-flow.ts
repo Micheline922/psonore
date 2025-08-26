@@ -76,6 +76,7 @@ const evaluationPrompt = ai.definePrompt({
     Your evaluation must be fair, constructive, and encouraging.
     1.  **Score**: Give a score from 0 to 10. Consider creativity, emotional impact, cleverness, and the use of the given words.
     2.  **Feedback**: Provide brief, actionable feedback. Start with what you liked, then suggest one or two ways to make it even more powerful. Address the user in the "tu" form.
+    3.  **Examples**: After the feedback, provide two different examples of punchlines that could be created with the given words. Start this section with "---EXEMPLES---".
 
     Generate the score and feedback now.`,
 });
@@ -102,6 +103,7 @@ const evaluatePunchlineFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await evaluationPrompt(input);
+    // The examples will be part of the feedback string, separated by "---EXEMPLES---"
     return output!;
   }
 );
