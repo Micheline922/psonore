@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   BookText,
@@ -17,7 +17,8 @@ import {
   Volume2,
   Wind,
   Zap,
-  GraduationCap
+  GraduationCap,
+  FolderKanban,
 } from "lucide-react";
 import { generateCreativeText, GenerateCreativeTextOutput } from "@/ai/flows/creative-ai-assistant";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import type { Creation } from "@/lib/types";
 
 type Ambiance = "Instrumental" | "Nature" | "Urbain" | null;
 
@@ -58,6 +60,8 @@ export default function StudioPage() {
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const [artistName, setArtistName] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
     const savedArtist = localStorage.getItem("plumeSonoreArtist");
@@ -65,15 +69,19 @@ export default function StudioPage() {
       router.replace("/");
     } else {
       setArtistName(savedArtist);
-      const savedText = localStorage.getItem(`plumeSonoreText_${savedArtist}`);
-      if (savedText) {
-        setText(savedText);
+      const creationId = searchParams.get('id');
+      if (creationId) {
+        const creations: Creation[] = JSON.parse(localStorage.getItem(`plumeSonoreCreations_${savedArtist}`) || '[]');
+        const creationToEdit = creations.find(c => c.id === parseInt(creationId));
+        if (creationToEdit) {
+          setText(creationToEdit.content);
+          setEditingId(creationToEdit.id);
+        }
       }
     }
-  }, [router]);
+  }, [router, searchParams]);
 
   useEffect(() => {
-    // Cleanup audio on component unmount
     return () => {
       if (audio) {
         audio.pause();
@@ -82,7 +90,6 @@ export default function StudioPage() {
     };
   }, [audio]);
 
-  // Placeholder for speech recognition
   useEffect(() => {
     // @ts-ignore
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -152,12 +159,38 @@ export default function StudioPage() {
   };
   
   const handleSave = () => {
-    if (artistName) {
-      localStorage.setItem(`plumeSonoreText_${artistName}`, text);
+    if (artistName && text.trim()) {
+      const creationsKey = `plumeSonoreCreations_${artistName}`;
+      const creations: Creation[] = JSON.parse(localStorage.getItem(creationsKey) || '[]');
+      
+      if (editingId !== null) {
+        const index = creations.findIndex(c => c.id === editingId);
+        if (index > -1) {
+          creations[index].content = text;
+          creations[index].date = new Date().toISOString();
+        }
+      } else {
+         const newCreation: Creation = {
+            id: Date.now(),
+            content: text,
+            date: new Date().toISOString(),
+          };
+          creations.unshift(newCreation);
+      }
+      
+      localStorage.setItem(creationsKey, JSON.stringify(creations));
+      
       toast({
         title: "Sauvegardé !",
-        description: "Votre texte a été sauvegardé localement.",
+        description: "Votre création a été sauvegardée.",
       });
+      router.push('/creations');
+    } else {
+         toast({
+            title: "Texte vide",
+            description: "Impossible de sauvegarder un texte vide.",
+            variant: "destructive",
+        });
     }
   };
 
@@ -285,9 +318,9 @@ export default function StudioPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-headline text-2xl">
                   <BookText className="text-accent" />
-                  Bloc-notes Créatif
+                  {editingId ? "Modifier la création" : "Bloc-notes Créatif"}
                 </CardTitle>
-                <CardDescription>Écrivez librement vos inspirations, poésies, et punchlines.</CardDescription>
+                <CardDescription>{editingId ? "Modifiez votre oeuvre." : "Écrivez librement vos inspirations, poésies, et punchlines."}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="relative">
@@ -385,6 +418,18 @@ export default function StudioPage() {
             </Card>
 
             <Card className="hover:border-primary/60 transition-colors">
+                <Link href="/creations" className="block h-full">
+                    <CardHeader>
+                        <CardTitle className="font-headline text-2xl flex items-center gap-2">
+                            <FolderKanban className="text-accent" />
+                            Mes Créations
+                        </CardTitle>
+                        <CardDescription>Retrouvez toutes vos œuvres sauvegardées.</CardDescription>
+                    </CardHeader>
+                </Link>
+            </Card>
+
+            <Card className="hover:border-primary/60 transition-colors">
                 <Link href="/academy" className="block h-full">
                     <CardHeader>
                         <CardTitle className="font-headline text-2xl flex items-center gap-2">
@@ -393,14 +438,9 @@ export default function StudioPage() {
                         </CardTitle>
                         <CardDescription>Approfondissez vos connaissances artistiques avec notre tuteur IA.</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <Button variant="link" className="p-0 text-primary">
-                        Commencer l'apprentissage
-                       </Button>
-                    </CardContent>
                 </Link>
             </Card>
-
+            
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline text-2xl flex items-center gap-2">
@@ -435,3 +475,5 @@ export default function StudioPage() {
     </div>
   );
 }
+
+    
