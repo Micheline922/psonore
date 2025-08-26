@@ -33,7 +33,7 @@ import {
     type EvaluatePunchlineInput,
 } from "@/ai/flows/punchline-quiz-flow";
 import { evaluatePerformance, type EvaluatePerformanceInput, type EvaluatePerformanceOutput } from "@/ai/flows/evaluate-performance-flow";
-import { getDefinition, type DictionaryInput, type DictionaryOutput } from "@/ai/flows/dictionary-flow";
+import { getDefinition, type DictionaryOutput } from "@/ai/flows/dictionary-flow";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -136,7 +136,7 @@ const tongueTwisters = [
     { name: "Exotique", text: "Tata, ta tarte tatin tenta Tonton." },
     { name: "Professionnel", text: "Lise et Lucette lisent et Lucette et Lise aussi." },
     { name: "Virelangue", text: "La pie niche haut, l'oie niche bas, où niche l'hibou ? L'hibou niche ni haut ni bas !" },
-    { name: "Rapide", text: "Seize jacinthes sèchent dans seize sachets secs." },
+    { name: "Sportif", text: "Seize jacinthes sèchent dans seize sachets secs." },
     { name: "Nature", text: "Le poivre fait fièvre à la pauvre pieuvre." }
 ];
 
@@ -832,7 +832,7 @@ export default function StudioPage() {
                   <Mic className="text-accent" />
                   Scène Virtuelle
                 </CardTitle>
-                 <CardDescription>Entraînez-vous et recevez un feedback de l'IA.</CardDescription>
+                 <CardDescription>Échauffez votre voix pour la performance.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                  <div>
@@ -843,7 +843,7 @@ export default function StudioPage() {
                     <Carousel className="w-full max-w-xs mx-auto" opts={{align: "start", loop: true}}>
                        <CarouselContent>
                             {tongueTwisters.map((item, index) => (
-                                <CarouselItem key={index}>
+                                <CarouselItem key={`${item.name}-${index}`}>
                                     <div className="p-1">
                                         <Card className="bg-muted/50">
                                             <CardContent className="flex flex-col items-center justify-center p-4 gap-2 text-center">
@@ -859,118 +859,6 @@ export default function StudioPage() {
                         <CarouselNext className="h-6 w-6 -right-4"/>
                     </Carousel>
                 </div>
-                <Separator />
-
-                <Dialog>
-                    <DialogTrigger asChild>
-                         <Button className="w-full">
-                            <Mic size={16} className="mr-2"/>Lancer le coach vocal
-                         </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-lg">
-                        <DialogHeader>
-                            <DialogTitle className="font-headline text-2xl flex items-center gap-2">
-                                <Mic className="text-accent"/> Coach Vocal IA
-                            </DialogTitle>
-                             <DialogDescription>
-                                Copiez votre texte, enregistrez votre performance et recevez un feedback instantané.
-                             </DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                             <div className="space-y-2">
-                                <Label>Choisir un texte d'entraînement</Label>
-                                <Select onValueChange={(value) => setPerformanceText(value)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Sélectionnez un virelangue..."/>
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {tongueTwisters.map((t, index) => (
-                                            <SelectItem key={`${t.name}-${index}`} value={t.text}>{t.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Separator className="flex-1"/>
-                                <span className="text-xs text-muted-foreground">OU</span>
-                                <Separator className="flex-1"/>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="performance-text">Votre Texte Personnel</Label>
-                                <Textarea 
-                                    id="performance-text"
-                                    placeholder="Collez ou écrivez votre texte ici..."
-                                    value={performanceText}
-                                    onChange={(e) => setPerformanceText(e.target.value)}
-                                    className="min-h-[150px]"
-                                    disabled={isRecording || isEvaluatingPerformance}
-                                />
-                            </div>
-                            <Button 
-                                variant={isRecording ? "destructive" : "secondary"} 
-                                onClick={handleVirtualMicRecord} 
-                                disabled={isEvaluatingPerformance || !performanceText}
-                            >
-                                {isRecording && <div className="mr-2 h-2 w-2 rounded-full bg-white animate-pulse"></div>}
-                                {isRecording ? "Enregistrement..." : "Lancer l'enregistrement"}
-                            </Button>
-                        </div>
-                        
-                         {(isEvaluatingPerformance || performanceResult || performanceHistory.length > 0) && (
-                            <div className="space-y-4 pt-4">
-                                 <Separator />
-                                 {isEvaluatingPerformance && (
-                                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                                        <Loader2 className="animate-spin" />
-                                        <p>Analyse de votre performance...</p>
-                                    </div>
-                                 )}
-                                 {performanceResult && (
-                                    <div>
-                                        <h3 className="font-headline text-lg mb-2">Analyse de la Performance</h3>
-                                         <p className="text-sm text-muted-foreground mb-4">Voici le retour du coach IA sur votre récitation.</p>
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="font-bold">Score Global</span>
-                                            <Badge className="text-lg">{performanceResult.score}/10</Badge>
-                                        </div>
-                                        <Progress value={performanceResult.score * 10} className="h-2 mb-4" />
-                                        
-                                        <h4 className="font-semibold flex items-center gap-2 mb-1"><Star size={16} className="text-primary"/>Points forts :</h4>
-                                        <p className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap">{performanceResult.positives}</p>
-
-                                        <h4 className="font-semibold flex items-center gap-2 mb-1"><RefreshCw size={16} className="text-accent"/>Axes d'amélioration :</h4>
-                                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{performanceResult.improvements}</p>
-                                    </div>
-                                 )}
-                                 {performanceHistory.length > 0 && !performanceResult && (
-                                    <div>
-                                        <h3 className="font-headline text-lg mb-2">Historique des 3 derniers scores</h3>
-                                         <div className="h-[100px]">
-                                            <ChartContainer config={{
-                                                score: { label: "Score", color: "hsl(var(--primary))" }
-                                            }}>
-                                                <BarChart 
-                                                    accessibilityLayer
-                                                    data={performanceHistory.map((h, i) => ({...h, name: `Essai ${i+1}`}))}
-                                                    margin={{ top: 20, right: 0, left: 0, bottom: 0 }}
-                                                >
-                                                    <ChartGrid vertical={false} />
-                                                    <ChartXAxis
-                                                        dataKey="name"
-                                                        tickLine={false}
-                                                        tickMargin={10}
-                                                        axisLine={false}
-                                                    />
-                                                    <Bar dataKey="score" fill="var(--color-score)" radius={4} maxBarSize={40} />
-                                                </BarChart>
-                                            </ChartContainer>
-                                        </div>
-                                    </div>
-                                 )}
-                            </div>
-                         )}
-                    </DialogContent>
-                </Dialog>
               </CardContent>
             </Card>
 
