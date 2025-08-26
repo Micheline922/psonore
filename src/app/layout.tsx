@@ -20,9 +20,14 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;0,700;1,400&family=Belleza&display=swap" rel="stylesheet" />
       </head>
-      <body className={cn("font-body antialiased min-h-screen")}>
-        {children}
+      <body className={cn("font-body antialiased min-h-screen flex flex-col")}>
+        <div className="flex-grow">
+            {children}
+        </div>
         <Toaster />
+        <footer className="text-center p-4 text-xs text-muted-foreground">
+            Conçu par Micheline Ntale
+        </footer>
       </body>
     </html>
   );
