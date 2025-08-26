@@ -17,6 +17,7 @@ import {
   Volume2,
   Wind,
   Zap,
+  GraduationCap
 } from "lucide-react";
 import { generateCreativeText, GenerateCreativeTextOutput } from "@/ai/flows/creative-ai-assistant";
 import { Button } from "@/components/ui/button";
@@ -381,6 +382,23 @@ export default function StudioPage() {
                     <Mic size={16} className="mr-2"/>Lancer le micro virtuel
                 </Button>
               </CardContent>
+            </Card>
+
+            <Card className="hover:border-primary/60 transition-colors">
+                <Link href="/academy" className="block h-full">
+                    <CardHeader>
+                        <CardTitle className="font-headline text-2xl flex items-center gap-2">
+                            <GraduationCap className="text-accent" />
+                            Académie
+                        </CardTitle>
+                        <CardDescription>Approfondissez vos connaissances artistiques avec notre tuteur IA.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button variant="link" className="p-0 text-primary">
+                        Commencer l'apprentissage
+                       </Button>
+                    </CardContent>
+                </Link>
             </Card>
 
             <Card>
