@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   BookText,
   BrainCircuit,
@@ -404,7 +405,9 @@ export default function StudioPage() {
                           <AvatarImage src="https://picsum.photos/100/100?random=3" data-ai-hint="writer photo" />
                           <AvatarFallback>A3</AvatarFallback>
                       </Avatar>
-                       <Button variant="link" className="pl-2 text-primary" onClick={() => router.push('/community')}>Voir plus</Button>
+                       <Button variant="link" asChild className="pl-2 text-primary">
+                        <Link href="/community">Voir plus</Link>
+                       </Button>
                   </div>
                 </CardContent>
             </Card>
