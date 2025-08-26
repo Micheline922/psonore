@@ -54,6 +54,16 @@ import type { Creation } from "@/lib/types";
 
 type Ambiance = "Instrumental" | "Nature" | "Urbain" | null;
 
+const proverbs = [
+  "Là où le coeur est, les pieds n'hésitent pas à y aller.",
+  "L'art de l'écriture est de peindre avec des mots.",
+  "La poésie est la musique de l'âme.",
+  "Chaque mot est une couleur sur la toile de l'imagination.",
+  "Le silence est parfois le plus beau des poèmes.",
+  "Mieux vaut prendre le changement par la main avant qu'il ne nous prenne par la gorge.",
+  "On ne voit bien qu'avec le cœur. L'essentiel est invisible pour les yeux."
+];
+
 export default function StudioPage() {
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
@@ -69,6 +79,11 @@ export default function StudioPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [proverb, setProverb] = useState("");
+
+  useEffect(() => {
+    setProverb(proverbs[Math.floor(Math.random() * proverbs.length)]);
+  }, []);
 
   useEffect(() => {
     const savedArtist = localStorage.getItem("plumeSonoreArtist");
@@ -444,7 +459,7 @@ export default function StudioPage() {
                 <div>
                     <h3 className="font-headline text-lg mb-2">Proverbe du Jour</h3>
                     <blockquote className="border-l-4 border-accent pl-4 italic text-muted-foreground">
-                        "Là où le coeur est, les pieds n'hésitent pas à y aller."
+                        {proverb ? `"${proverb}"` : "..."}
                     </blockquote>
                 </div>
                 <Separator />
