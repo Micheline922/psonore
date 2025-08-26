@@ -24,7 +24,7 @@ import {
   Flame,
   BookMarked,
   Search,
-  ChevronDown,
+  User,
 } from "lucide-react";
 import { generateCreativeText } from "@/ai/flows/creative-ai-assistant";
 import {
@@ -81,7 +81,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Bar, BarChart, ResponsiveContainer } from "recharts"
-import { ChartContainer } from "@/components/ui/chart";
+import { ChartContainer, ChartXAxis, ChartGrid } from "@/components/ui/chart";
 import {
   Select,
   SelectContent,
@@ -532,15 +532,22 @@ export default function StudioPage() {
                 <CardDescription>{editingId ? "Modifiez votre oeuvre." : "Écrivez librement vos inspirations, poésies, et punchlines."}</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-1 space-y-2">
+                    <Label htmlFor="artistName" className="font-headline">Auteur</Label>
+                    <div className="relative">
+                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                       <Input id="artistName" value={artistName} disabled className="pl-8"/>
+                    </div>
+                  </div>
+                   <div className="md:col-span-2 space-y-2">
                     <Label htmlFor="title" className="font-headline">Titre</Label>
                     <Input id="title" placeholder="Le titre de votre oeuvre" value={title} onChange={e => setTitle(e.target.value)} />
                   </div>
-                   <div className="space-y-2">
+                </div>
+                <div className="space-y-2">
                     <Label htmlFor="slogan" className="font-headline">Slogan</Label>
                     <Input id="slogan" placeholder="Votre phrase-clé (optionnel)" value={slogan} onChange={e => setSlogan(e.target.value)} />
-                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="content" className="font-headline">Corps du texte</Label>
@@ -882,6 +889,13 @@ export default function StudioPage() {
                                                     data={performanceHistory.map((h, i) => ({...h, name: `Essai ${i+1}`}))}
                                                     margin={{ top: 20, right: 0, left: 0, bottom: 0 }}
                                                 >
+                                                    <ChartGrid vertical={false} />
+                                                    <ChartXAxis
+                                                        dataKey="name"
+                                                        tickLine={false}
+                                                        tickMargin={10}
+                                                        axisLine={false}
+                                                    />
                                                     <Bar dataKey="score" fill="var(--color-score)" radius={4} maxBarSize={40} />
                                                 </BarChart>
                                             </ChartContainer>
@@ -941,5 +955,3 @@ export default function StudioPage() {
     </div>
   );
 }
-
-    
