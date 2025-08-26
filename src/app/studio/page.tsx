@@ -404,7 +404,7 @@ export default function StudioPage() {
                           <AvatarImage src="https://picsum.photos/100/100?random=3" data-ai-hint="writer photo" />
                           <AvatarFallback>A3</AvatarFallback>
                       </Avatar>
-                       <Button variant="link" className="pl-2 text-primary" onClick={() => toast({title: "Bientôt disponible!", description: "La section communauté est en cours de construction."})}>Voir plus</Button>
+                       <Button variant="link" className="pl-2 text-primary" onClick={() => router.push('/community')}>Voir plus</Button>
                   </div>
                 </CardContent>
             </Card>
