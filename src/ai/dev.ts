@@ -8,4 +8,3 @@ import '@/ai/flows/art-tutor-flow.ts';
 import '@/ai/flows/punchline-quiz-flow.ts';
 import '@/ai/flows/evaluate-performance-flow.ts';
 import '@/ai/flows/dictionary-flow.ts';
-import '@/ai/flows/academy-quiz-flow.ts';

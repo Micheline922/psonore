@@ -4,9 +4,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Send, MessageSquareQuote, GraduationCap, PenLine, BrainCircuit, BookOpen, History, Radio } from "lucide-react";
+import { ArrowLeft, Loader2, Send, MessageSquareQuote, GraduationCap, PenLine, BrainCircuit, BookOpen, History } from "lucide-react";
 import { artTutor, ArtTutorInput } from "@/ai/flows/art-tutor-flow";
-import { generateAcademyQuiz, evaluateAcademyQuiz, type AcademyQuizQuestion, type AcademyQuizAnswer } from "@/ai/flows/academy-quiz-flow";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/logo";
 import { Input } from "@/components/ui/input";
@@ -17,7 +16,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -27,9 +25,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
@@ -63,7 +58,6 @@ const advancedLessons = [
     { week: "Semaine 29-30: Le Projet Artistique", title: "Construire un recueil ou un spectacle", content: "Comment passer de plusieurs textes à un projet cohérent ? On aborde la thématique, le fil rouge, l'organisation des textes pour créer une oeuvre complète et aboutie. Le voyage artistique est sans fin." }
 ];
 
-
 const renderLessons = (lessons: { week: string; title: string; content: string; }[]) => {
     return (
          <Accordion type="single" collapsible className="w-full">
@@ -93,16 +87,6 @@ export default function AcademyPage() {
   const router = useRouter();
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Quiz State
-  const [quizQuestions, setQuizQuestions] = useState<AcademyQuizQuestion[]>([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
-  const [quizScore, setQuizScore] = useState(0);
-  const [quizFeedback, setQuizFeedback] = useState<string | null>(null);
-  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
-  const [isQuizFinished, setIsQuizFinished] = useState(false);
-
 
   useEffect(() => {
     const savedArtist = localStorage.getItem("plumeSonoreArtist");
@@ -152,48 +136,6 @@ export default function AcademyPage() {
     }
   };
 
-  const startNewQuiz = async () => {
-    setIsGeneratingQuiz(true);
-    setQuizFeedback(null);
-    setSelectedAnswer(null);
-    setQuizScore(0);
-    setCurrentQuestionIndex(0);
-    setIsQuizFinished(false);
-    try {
-        const {questions} = await generateAcademyQuiz();
-        setQuizQuestions(questions);
-    } catch(e) {
-        toast({ title: "Erreur", description: "Impossible de créer le quiz.", variant: "destructive"});
-    } finally {
-        setIsGeneratingQuiz(false);
-    }
-  }
-
-  const handleAnswerSubmit = async () => {
-      if (!selectedAnswer || !quizQuestions) return;
-
-      const answer: AcademyQuizAnswer = {
-          question: quizQuestions[currentQuestionIndex],
-          selectedAnswer: selectedAnswer,
-      }
-      const { feedback, isCorrect } = await evaluateAcademyQuiz(answer);
-      setQuizFeedback(feedback);
-      if(isCorrect) {
-          setQuizScore(s => s + 1);
-      }
-  }
-  
-  const handleNextQuestion = () => {
-      if(currentQuestionIndex < quizQuestions.length - 1) {
-          setCurrentQuestionIndex(i => i + 1);
-          setSelectedAnswer(null);
-          setQuizFeedback(null);
-      } else {
-          setIsQuizFinished(true);
-      }
-  }
-
-
   if (!artistName) {
     return (
         <div className="flex items-center justify-center min-h-screen">
@@ -222,11 +164,10 @@ export default function AcademyPage() {
       <main className="max-w-6xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
             <Tabs defaultValue="beginner">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="beginner"><PenLine className="mr-2" />Débutant</TabsTrigger>
                     <TabsTrigger value="intermediate"><BrainCircuit className="mr-2"/>Intermédiaire</TabsTrigger>
                     <TabsTrigger value="advanced"><BookOpen className="mr-2"/>Évolué</TabsTrigger>
-                    <TabsTrigger value="quiz"><Radio className="mr-2"/>Quiz Interactif</TabsTrigger>
                 </TabsList>
                 <TabsContent value="beginner">
                     <Card>
@@ -258,68 +199,6 @@ export default function AcademyPage() {
                         </CardHeader>
                         <CardContent>
                             {renderLessons(advancedLessons)}
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-                <TabsContent value="quiz">
-                     <Card>
-                        <CardHeader>
-                            <CardTitle className="font-headline text-2xl">Quiz Interactif</CardTitle>
-                            <CardDescription>Testez vos connaissances et apprenez en vous amusant.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex flex-col items-center justify-center min-h-[300px] space-y-4">
-                            {isGeneratingQuiz && <Loader2 className="animate-spin h-8 w-8 text-primary" />}
-                            
-                            {!isGeneratingQuiz && quizQuestions.length === 0 && (
-                                <Button onClick={startNewQuiz}>Commencer un nouveau quiz</Button>
-                            )}
-                            
-                            {!isGeneratingQuiz && quizQuestions.length > 0 && !isQuizFinished && (
-                                <div className="w-full text-left space-y-4">
-                                    <p className="text-sm text-muted-foreground">Question {currentQuestionIndex + 1} / {quizQuestions.length}</p>
-                                    <h3 className="font-semibold text-lg">{quizQuestions[currentQuestionIndex].questionText}</h3>
-                                    
-                                    <RadioGroup value={selectedAnswer ?? ''} onValueChange={setSelectedAnswer} disabled={!!quizFeedback}>
-                                        {quizQuestions[currentQuestionIndex].options.map(option => (
-                                            <div key={option} className="flex items-center space-x-2">
-                                                <RadioGroupItem value={option} id={option} />
-                                                <Label htmlFor={option}>{option}</Label>
-                                            </div>
-                                        ))}
-                                    </RadioGroup>
-
-                                    {quizFeedback && (
-                                        <div className={cn(
-                                            "p-3 rounded-md text-sm",
-                                            quizFeedback.includes("Correct") ? "bg-green-500/10 text-green-700 border border-green-500/20" : "bg-red-500/10 text-red-700 border border-red-500/20"
-                                        )}>
-                                            {quizFeedback}
-                                        </div>
-                                    )}
-                                    
-                                    <div className="flex justify-end gap-2">
-                                        {!quizFeedback && (
-                                             <Button onClick={handleAnswerSubmit} disabled={!selectedAnswer}>Valider</Button>
-                                        )}
-                                        {quizFeedback && (
-                                            <Button onClick={handleNextQuestion}>
-                                                {currentQuestionIndex < quizQuestions.length - 1 ? "Question suivante" : "Terminer le quiz"}
-                                            </Button>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                            {isQuizFinished && (
-                                <div className="text-center space-y-4">
-                                     <h3 className="font-headline text-2xl text-primary">Quiz Terminé !</h3>
-                                     <p>Votre score : <Badge className="text-lg">{quizScore} / {quizQuestions.length}</Badge></p>
-                                     <p className="text-muted-foreground max-w-md mx-auto">
-                                        {quizScore === quizQuestions.length ? "Excellent travail ! Vous maîtrisez le sujet." : "Continuez à apprendre avec les leçons et le tuteur. Chaque erreur est une opportunité !"}
-                                     </p>
-                                     <Button onClick={startNewQuiz}>Recommencer un quiz</Button>
-                                </div>
-                            )}
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -396,5 +275,3 @@ export default function AcademyPage() {
     </div>
   );
 }
-
-    
